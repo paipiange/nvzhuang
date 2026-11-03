@@ -387,6 +387,22 @@ footer a:hover{color:var(--tx);text-decoration:underline}
   .history-clear{width:100%}
   .history-grid{grid-template-columns:1fr}
 }
+/* 图库版本切换器 (写实真人版 vs 二次元动漫版) */
+.db-switch-row{display:flex;align-items:center;gap:12px;margin:16px 0 10px;flex-wrap:wrap}
+.db-switch{display:inline-flex;padding:4px;background:var(--control-bg);border:1px solid var(--control-border);border-radius:14px;gap:6px;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+.db-tab{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 18px;border:0;border-radius:10px;background:transparent;color:var(--control-text);font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .18s ease}
+.db-tab:hover{background:var(--recessed-bg);color:var(--tx)}
+.db-tab[aria-selected="true"]{background:var(--selected-bg);color:var(--selected-text);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.db-tab .db-ico{flex-shrink:0}
+.db-tab .db-count{font-style:normal;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:rgba(128,128,128,.18);color:inherit}
+.db-tab[aria-selected="true"] .db-count{background:rgba(255,255,255,.22);color:inherit}
+html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba(255,255,255,.25)}
+
+/* 试穿台图库选择 */
+.fit-db-switch{display:flex;gap:6px;margin-bottom:10px}
+.fit-db-btn{flex:1;min-height:36px;padding:0 10px;border-radius:8px;border:1px solid var(--control-border);background:var(--control-bg);color:var(--control-text);font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+.fit-db-btn:hover{background:var(--recessed-bg);color:var(--tx)}
+.fit-db-btn[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-text);border-color:var(--selected-bg)}
 </style>
 </head>
 <body>
@@ -443,7 +459,21 @@ footer a:hover{color:var(--tx);text-decoration:underline}
     </div>
   </div>
   <h1><span data-i18n="titleWord">拍片哥女装</span> <span data-i18n="titleDb">图库</span></h1>
-  <p class="sub" data-i18n="subtitle">人物不入镜的纯服装图像（2:3）。可按春・夏・秋・冬・内衣・派对・泳装・性感分类浏览。</p>
+  <p class="sub" data-i18n="subtitle" id="heroSubtitle">人物不入镜的纯服装图像（2:3）。可按春・夏・秋・冬・内衣・派对・泳装・性感分类浏览。</p>
+  <div class="db-switch-row">
+    <div class="db-switch" id="dbSwitch" role="tablist" aria-label="图库模式切换">
+      <button type="button" class="db-tab" data-db="real" aria-selected="true" role="tab">
+        <svg class="db-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span class="db-name" data-i18n="dbReal">写实真人版</span>
+        <em class="db-count" id="dbRealCount">1,407</em>
+      </button>
+      <button type="button" class="db-tab" data-db="anime" aria-selected="false" role="tab">
+        <svg class="db-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span class="db-name" data-i18n="dbAnime">二次元动漫版</span>
+        <em class="db-count" id="dbAnimeCount">1,320</em>
+      </button>
+    </div>
+  </div>
 </header>
 
 <div class="tools"><div class="tools-in">
@@ -543,6 +573,10 @@ footer a:hover{color:var(--tx);text-decoration:underline}
           <button type="button" class="garment-source-tab" id="garmentUploadTab" role="tab" aria-selected="false" aria-controls="garmentUploadPanel" tabindex="-1" data-i18n="garmentSourceUpload">上传服装</button>
         </div>
         <div class="garment-source-panel" id="garmentCatalogPanel" role="tabpanel" aria-labelledby="garmentCatalogTab">
+          <div class="fit-db-switch" id="fitDbSwitch" role="group" aria-label="试穿图库来源">
+            <button type="button" class="fit-db-btn" data-db="real" aria-pressed="true" data-i18n="fitDbReal">写实版 (1407)</button>
+            <button type="button" class="fit-db-btn" data-db="anime" aria-pressed="false" data-i18n="fitDbAnime">动漫版 (1320)</button>
+          </div>
           <div class="fit-search-row">
             <input class="fit-search" id="fitSearch" type="search" data-i18n-placeholder="fitSearchPh" placeholder="搜索服装…">
             <button type="button" class="fit-random" id="fitRandom"><span aria-hidden="true">🎲</span><span data-i18n="fitRandom">随机</span></button>
@@ -746,11 +780,20 @@ footer a:hover{color:var(--tx);text-decoration:underline}
 </div>
 
 <script src="data.js"></script>
+<script src="data-anime.js"></script>
 <script>
 // ===== 双语字典 =====
 const I18N = {
   zh: {
     eyebrow: 'COSTUME-DB-01 · 拍片哥女装参考图集',
+    eyebrowReal: 'COSTUME-DB-01 · 拍片哥女装参考图集',
+    eyebrowAnime: 'COSTUME-ANIME-DB · 拍片哥动漫女装图集',
+    dbReal: '写实真人版',
+    dbAnime: '二次元动漫版',
+    subtitleReal: '人物不入镜的纯服装图像（2:3）。可按春・夏・秋・冬・内衣・派对・泳装・性感分类浏览。',
+    subtitleAnime: '人物不入镜的动漫调纯服装图像（2:3）。可按春・夏・秋・冬・内衣・派对・泳装・性感分类浏览。',
+    fitDbReal: '写实版 (1407)',
+    fitDbAnime: '动漫版 (1320)',
     titleWord: '拍片哥女装',
     titleDb: '图库',
     subtitle: '人物不入镜的纯服装图像（2:3）。可按春・夏・秋・冬・内衣・派对・泳装・性感分类浏览。',
@@ -875,6 +918,14 @@ const I18N = {
   },
   en: {
     eyebrow: 'COSTUME-DB-01 · PaipianGe Costume Reference Gallery',
+    eyebrowReal: 'COSTUME-DB-01 · PaipianGe Costume Reference Gallery',
+    eyebrowAnime: 'COSTUME-ANIME-DB · PaipianGe Anime Costume Gallery',
+    dbReal: 'Realistic',
+    dbAnime: 'Anime Style',
+    subtitleReal: 'Person-free costume images (2:3). Browse by Spring, Summer, Autumn, Winter, Lingerie, Party, Swimwear, and Sexy categories.',
+    subtitleAnime: 'Anime-style person-free costume images (2:3). Browse by Spring, Summer, Autumn, Winter, Lingerie, Party, Swimwear, and Sexy categories.',
+    fitDbReal: 'Real (1407)',
+    fitDbAnime: 'Anime (1320)',
     titleWord: 'PaipianGe',
     titleDb: 'Costumes',
     subtitle: 'Person-free costume images (2:3). Browse by Spring, Summer, Autumn, Winter, Lingerie, Party, Swimwear, and Sexy categories.',
@@ -1048,17 +1099,39 @@ const ZH_ALIAS = {
 // ===== 全局状态 =====
 let LANG = 'zh';
 const THEME_STORAGE_KEY = 'nvzhuang_theme';
+const DB_STORAGE_KEY = 'nvzhuang_db';
 let THEME = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+
+// 当前图库版本：'real'（写实版 1407 套）或 'anime'（二次元动漫版 1320 套）
+let CURRENT_DB = 'real';
+try {
+  const urlParam = new URLSearchParams(window.location.search).get('db');
+  if (urlParam === 'anime' || urlParam === 'real') {
+    CURRENT_DB = urlParam;
+  } else {
+    const saved = localStorage.getItem(DB_STORAGE_KEY);
+    if (saved === 'anime' || saved === 'real') CURRENT_DB = saved;
+  }
+} catch(_) {}
+
+function getActiveD(){
+  return (CURRENT_DB === 'anime' && typeof D_ANIME !== 'undefined') ? D_ANIME : D;
+}
+function getActiveMeta(){
+  return (CURRENT_DB === 'anime' && typeof META_ANIME !== 'undefined') ? META_ANIME : META;
+}
+
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const PAGE=120;
 const RANDOM_TAB='__random__';
 const S={cat:'',q:'',n:PAGE,random:false};
-const CATS=META.cats;
+let CATS=getActiveMeta().cats;
 let randomOrder=new Map();
 
 function reshuffle(){
-  const shuffled=[...D];
+  const list = getActiveD();
+  const shuffled=[...list];
   for(let i=shuffled.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
     [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
@@ -1080,6 +1153,56 @@ function wordName(w){
   return w;
 }
 function fmtNum(n){ return LANG==='zh' ? Number(n).toLocaleString('zh-CN') : Number(n).toLocaleString('en-US'); }
+
+function updateDbUI(){
+  document.querySelectorAll('#dbSwitch .db-tab').forEach(btn => {
+    const isSel = btn.dataset.db === CURRENT_DB;
+    btn.setAttribute('aria-selected', String(isSel));
+  });
+  document.querySelectorAll('#fitDbSwitch .fit-db-btn').forEach(btn => {
+    const isSel = btn.dataset.db === CURRENT_DB;
+    btn.setAttribute('aria-pressed', String(isSel));
+  });
+  const eyebrowEl = document.querySelector('[data-i18n="eyebrow"]');
+  if (eyebrowEl) {
+    eyebrowEl.textContent = t(CURRENT_DB === 'anime' ? 'eyebrowAnime' : 'eyebrowReal');
+  }
+  const subEl = document.getElementById('heroSubtitle');
+  if (subEl) {
+    subEl.textContent = t(CURRENT_DB === 'anime' ? 'subtitleAnime' : 'subtitleReal');
+  }
+}
+
+function setDatabase(db, syncUrl = true){
+  if (db !== 'real' && db !== 'anime') return;
+  CURRENT_DB = db;
+  try {
+    localStorage.setItem(DB_STORAGE_KEY, db);
+    if (syncUrl) {
+      const url = new URL(window.location);
+      url.searchParams.set('db', db);
+      window.history.replaceState({}, '', url);
+    }
+  } catch(_) {}
+
+  CATS = getActiveMeta().cats;
+  S.cat = '';
+  S.random = false;
+  S.n = PAGE;
+  reshuffle();
+  updateDbUI();
+  drawTabs();
+  draw();
+  if (window.refreshFitGarments) {
+    window.refreshFitGarments();
+  }
+}
+
+document.querySelectorAll('#dbSwitch .db-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setDatabase(btn.dataset.db);
+  });
+});
 
 function updateThemeUI(){
   const isDark = THEME === 'dark';
@@ -1124,6 +1247,7 @@ function applyLang(){
     b.setAttribute('aria-pressed', String(b.dataset.lang===LANG));
   });
   updateThemeUI();
+  updateDbUI();
   // 重新绘制
   drawTabs();
   draw();
@@ -1137,7 +1261,9 @@ document.querySelectorAll('[data-theme-toggle]').forEach(toggle=>{
 
 // ===== 标签页 =====
 function drawTabs(){
-  const tabsData=[['', t('all'), D.length], [RANDOM_TAB, t('random'), D.length], ...CATS.map(c=>[c, catName(c), META.counts[c]])];
+  const curD = getActiveD();
+  const curMeta = getActiveMeta();
+  const tabsData=[['', t('all'), curD.length], [RANDOM_TAB, t('random'), curD.length], ...CATS.map(c=>[c, catName(c), curMeta.counts[c]])];
   $('#tabs').innerHTML=tabsData.map(([v,l,n])=>{
     const selected=v===RANDOM_TAB ? S.random : !S.random&&S.cat===v;
     return `<button class="tab" role="tab" data-v="${esc(v)}" aria-selected="${selected}">${esc(l)}<em>${fmtNum(n)}</em></button>`;
@@ -1191,7 +1317,8 @@ function card(d,i){
   <div class="meta"><div class="row"><div class="id">${esc(d.id)}</div><div class="cat">${esc(catName(d.カテゴリ))}</div></div><div class="desc">${esc(kw)}</div></div></article>`;
 }
 function draw(){
-  VIEW=D.filter(hit);
+  const curD = getActiveD();
+  VIEW=curD.filter(hit);
   if(S.random)VIEW.sort((a,b)=>(randomOrder.get(a.id)??0)-(randomOrder.get(b.id)??0));
   const g=$('#grid');
   $('#count').textContent=t('showing').replace('{n}', fmtNum(VIEW.length));
@@ -1229,8 +1356,8 @@ function showM(){
   $('#mdesc').textContent=d.キーワード.split(' ').map(wordName).join(' · ');
   const dl=$('#mdl');dl.href=d.原寸;dl.setAttribute('download',d.id+'.png');
   dl.onclick = e => {
-    // 若原寸路径为本地相对路径 png/，且可能未部署，做平滑探测回退
-    if (d.原寸 && d.原寸.startsWith('png/')) {
+    // 平滑探测原寸 PNG，若不可达则回退到本地 webp
+    if (d.原寸) {
       e.preventDefault();
       fetch(d.原寸, { method: 'HEAD' }).then(res => {
         const a = document.createElement('a');
@@ -2091,7 +2218,15 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
 
   // 暴露给外部（列表卡片 / 详情弹窗）：带着指定服装打开试穿页
   window.openFitWith = (garmentId) => {
-    const d = D.find(x => x.id === garmentId);
+    let d = getActiveD().find(x => x.id === garmentId);
+    if (!d) {
+      const otherDb = CURRENT_DB === 'anime' ? 'real' : 'anime';
+      const otherList = otherDb === 'anime' ? (typeof D_ANIME !== 'undefined' ? D_ANIME : []) : D;
+      d = otherList.find(x => x.id === garmentId);
+      if (d) {
+        setDatabase(otherDb);
+      }
+    }
     if (d) {
       pickedGarment = d;
       garmentMode = 'catalog';
@@ -2229,7 +2364,7 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
 
   // ===== 选择服装 =====
   function getFilteredGarments(){
-    return D.filter(d=>{
+    return getActiveD().filter(d=>{
       if(!fitSearchQ) return true;
       const idx=new Set([d.id.toLowerCase()]);
       idx.add(d.カテゴリ);
@@ -2254,6 +2389,13 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
   }
   fitSearch.addEventListener('input', e=>{ fitSearchQ=e.target.value.trim(); refreshGarments(); });
 
+  document.querySelectorAll('#fitDbSwitch .fit-db-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setDatabase(btn.dataset.db);
+    });
+  });
+  window.refreshFitGarments = refreshGarments;
+
   function selectGarment(d){
     pickedGarment = d;
     garmentMode = 'catalog';
@@ -2272,14 +2414,14 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
 
   garmentList.addEventListener('click', e=>{
     const g=e.target.closest('.g'); if(!g) return;
-    const d = D.find(x=>x.id===g.dataset.id); if(!d) return;
+    const d = getActiveD().find(x=>x.id===g.dataset.id); if(!d) return;
     selectGarment(d);
   });
   garmentList.addEventListener('keydown', e=>{
     if(e.key!=='Enter'&&e.key!==' ') return;
     const g=e.target.closest('.g'); if(!g) return;
     e.preventDefault();
-    const d = D.find(x=>x.id===g.dataset.id); if(d) selectGarment(d);
+    const d = getActiveD().find(x=>x.id===g.dataset.id); if(d) selectGarment(d);
   });
 
   // 刷新「当前选中服装」提示条
