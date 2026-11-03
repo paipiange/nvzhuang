@@ -35,6 +35,10 @@ func DefaultSecurityConfig() *SecurityConfig {
 			"https://paipiange.github.io",
 			"http://localhost:3000",
 			"http://127.0.0.1:3000",
+			"http://localhost:8080",
+			"http://127.0.0.1:8080",
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
 		},
 		AllowPrivateNetwork: false,
 		RateLimit: RateLimitConfig{
@@ -69,6 +73,10 @@ func LoadSecurityConfig(ctx context.Context) (*SecurityConfig, error) {
 			"https://paipiange.github.io",
 			"http://localhost:3000",
 			"http://127.0.0.1:3000",
+			"http://localhost:8080",
+			"http://127.0.0.1:8080",
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
 		}
 	}
 	if cfg.RateLimit.RequestsPerMinute <= 0 {

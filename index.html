@@ -615,9 +615,11 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
             <option value="gemini" data-i18n="aiModelGemini">Nano Banana 2（默认）</option>
             <option value="gpt-image" data-i18n="aiModelGPT">GPT Image 2</option>
             <option value="doubao" data-i18n="aiModelDoubao">豆包 Seedream（国内）</option>
+            <option value="comfyui" data-i18n="aiModelComfyUI">ComfyUI 本地离线生图</option>
           </select>
         </div>
         <div class="fit-tip-box ai-gpt-notice" id="aiGptNotice" style="display:none;background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.25);color:var(--tx2);" data-i18n="gptModelNotice">💡 提示：GPT Image 2 已启用防封控安全提示词；生成时将以端庄商用型录风格合成服装，人物面部将保持神貌相似。</div>
+        <div class="fit-tip-box ai-comfy-notice" id="aiComfyNotice" style="display:none;background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.25);color:var(--tx2);" data-i18n="comfyModelNotice">💡 提示：ComfyUI 离线生图使用本机 GPU 运算，无需配置在线 API Key 与消耗网络额度。请确保本机 ComfyUI 与换装后端均已启动。</div>
         <div class="ai-config-strip">
           <div class="ai-config-copy">
             <span data-i18n="settingsCurrent">当前调用配置</span>
@@ -855,11 +857,12 @@ const I18N = {
     fitAutoCut: '自动去背景（抠图）', fitLayerUp: '置顶', fitLayerDown: '置底',
     // AI 换装
     aiTitle: '生成效果', aiDesc: '用大模型把衣服真实穿到人像上',
-    aiModel: '换装模型', aiModelGPT: 'GPT Image 2', aiModelDoubao: '豆包 Seedream（国内）', aiModelGemini: 'Nano Banana 2（默认）',
+    aiModel: '换装模型', aiModelGPT: 'GPT Image 2', aiModelDoubao: '豆包 Seedream（国内）', aiModelGemini: 'Nano Banana 2（默认）', aiModelComfyUI: 'ComfyUI 本地离线生图',
     gptModelNotice: '💡 提示：GPT Image 2 已启用防封控安全提示词；生成时将以端庄商用型录风格合成服装，人物面部将保持神貌相似。',
+    comfyModelNotice: '💡 提示：ComfyUI 离线生图使用本机 GPU 运算，无需配置在线 API Key 与消耗网络额度。请确保本机 ComfyUI 与换装后端均已启动。',
     aiGeneratingGPT: '正在使用 GPT Image 2 安全模式换装生成中…',
     aiSuccessGPT: '换装完成（已使用 GPT Image 2 防封控安全模式生成并保存）',
-    aiGeneratingComfy: '正在使用本机 ComfyUI 固定工作流生成，中间帧将在完成后作为结果图…',
+    aiGeneratingComfy: '正在使用本机 ComfyUI 本地离线生成中，请稍候…',
     aiSuccessComfy: '本机 ComfyUI 生成完成，结果已保存到浏览器生成记录',
     aiPickedNone: '未选服装 — 请在下方「选择一件服装」点选一件', aiPicked: '已选服装：',
     aiGenerate: '开始 AI 换装', aiGenerating: '生成中…', aiNeedPhoto: '请先上传你的照片',
@@ -986,11 +989,12 @@ const I18N = {
     fitAutoCut: 'Auto remove background', fitLayerUp: 'Bring to front', fitLayerDown: 'Send to back',
     // AI try-on
     aiTitle: 'Generate result', aiDesc: 'Dress the person with the garment using a large model',
-    aiModel: 'Model', aiModelGPT: 'GPT Image 2', aiModelDoubao: 'Doubao Seedream (CN)', aiModelGemini: 'Nano Banana 2 (default)',
+    aiModel: 'Model', aiModelGPT: 'GPT Image 2', aiModelDoubao: 'Doubao Seedream (CN)', aiModelGemini: 'Nano Banana 2 (default)', aiModelComfyUI: 'ComfyUI Local Offline',
     gptModelNotice: '💡 Notice: GPT Image 2 uses a safety-optimized prompt to prevent moderation rejection; generated with modest commercial styling and likeness preservation.',
+    comfyModelNotice: '💡 Tip: ComfyUI offline generation runs locally on your GPU without online API keys or usage fees. Ensure both ComfyUI and local backend are running.',
     aiGeneratingGPT: 'Generating try-on with GPT Image 2 (safety mode), please wait…',
     aiSuccessGPT: 'Try-on complete (generated via GPT Image 2 safety mode)',
-    aiGeneratingComfy: 'Generating with the fixed local ComfyUI workflow. The middle frame will be returned as the result image…',
+    aiGeneratingComfy: 'Generating with local ComfyUI offline workflow, please wait…',
     aiSuccessComfy: 'Local ComfyUI generation completed and was saved to browser history',
     aiPickedNone: 'No garment picked — pick one below', aiPicked: 'Picked garment: ',
     aiGenerate: 'Start AI try-on', aiGenerating: 'Generating…', aiNeedPhoto: 'Upload your photo first',
@@ -1780,11 +1784,16 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
   function refreshConfigUI(){
     const aiModelEl = document.getElementById('aiModel');
     const aiGptNotice = document.getElementById('aiGptNotice');
+    const aiComfyNotice = document.getElementById('aiComfyNotice');
     const isGPT = tryonSettings.useCustom
       ? /gpt-image/i.test(tryonSettings.model || '')
       : aiModelEl.value === 'gpt-image';
+    const isComfy = (tryonSettings.useCustom && tryonSettings.provider === 'comfyui') || (!tryonSettings.useCustom && aiModelEl.value === 'comfyui');
     if(aiGptNotice){
       aiGptNotice.style.display = isGPT ? 'block' : 'none';
+    }
+    if(aiComfyNotice){
+      aiComfyNotice.style.display = isComfy ? 'block' : 'none';
     }
     if(tryonSettings.useCustom){
       const providerOption = Array.from(settingsProvider.options).find(option=>option.value===tryonSettings.provider);
@@ -1795,7 +1804,7 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
     }else{
       const selected = aiModelEl.options[aiModelEl.selectedIndex];
       aiConfigName.textContent = `${t('settingsServerPreset')} · ${selected ? selected.textContent : aiModelEl.value}`;
-      aiConfigNote.textContent = t('settingsServerNote');
+      aiConfigNote.textContent = t(isComfy ? 'settingsComfyNote' : 'settingsServerNote');
       aiModelEl.disabled = false;
     }
   }
@@ -2492,7 +2501,7 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
     if(location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.protocol === 'file:') return 'http://127.0.0.1:8000';
     return '';  // 空 = 未配置，点击时提示
   })();
-  const getAIAPI = () => tryonSettings.backendUrl || ((tryonSettings.useCustom && tryonSettings.provider === 'comfyui') ? 'http://127.0.0.1:8000' : DEFAULT_AI_API);
+  const getAIAPI = () => tryonSettings.backendUrl || (((tryonSettings.useCustom && tryonSettings.provider === 'comfyui') || (aiModel && aiModel.value === 'comfyui')) ? 'http://127.0.0.1:8000' : DEFAULT_AI_API);
 
   const aiModel = document.getElementById('aiModel');
   const aiGenerate = document.getElementById('aiGenerate');
@@ -2762,7 +2771,7 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
     const isGPT = tryonSettings.useCustom
       ? /gpt-image/i.test(tryonSettings.model || '')
       : aiModel.value === 'gpt-image';
-    const isComfy = tryonSettings.useCustom && tryonSettings.provider === 'comfyui';
+    const isComfy = (tryonSettings.useCustom && tryonSettings.provider === 'comfyui') || (!tryonSettings.useCustom && aiModel.value === 'comfyui');
 
     setGenerating(true, isGPT, isComfy);
     if(isGPT){
