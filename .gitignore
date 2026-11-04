@@ -22,3 +22,6 @@ id_rsa*
 config.yaml
 **/config/config.yaml
 *.log
+
+# 临时测试生成输出
+output/
