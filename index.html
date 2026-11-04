@@ -403,6 +403,46 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
 .fit-db-btn{flex:1;min-height:36px;padding:0 10px;border-radius:8px;border:1px solid var(--control-border);background:var(--control-bg);color:var(--control-text);font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
 .fit-db-btn:hover{background:var(--recessed-bg);color:var(--tx)}
 .fit-db-btn[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-text);border-color:var(--selected-bg)}
+
+/* 模特卡片与专属操作 */
+.tryon-chip-portrait{background:linear-gradient(90deg,#ff6b8b,#ff8e53);color:#fff}
+.cat-portrait{color:var(--ac)!important;font-weight:600}
+.portrait-subtabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+.portrait-subtab{min-height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--control-border);background:var(--panel);color:var(--control-text);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap}
+.portrait-subtab:hover{border-color:var(--control-hover-border);color:var(--tx)}
+.portrait-subtab[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-text);border-color:var(--selected-bg)}
+
+/* 试衣间模特选择触发区 */
+.portrait-quick-row{margin:10px 0 6px}
+.btn-portrait-quick{width:100%;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;border:1px dashed var(--ac);border-radius:10px;background:rgba(143,180,255,.08);color:var(--ac2);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s ease}
+.btn-portrait-quick:hover{background:rgba(143,180,255,.16);border-color:var(--ac2);transform:translateY(-1px)}
+.btn-portrait-quick svg{flex-shrink:0}
+
+/* 模特选择弹窗抽屉 */
+.portrait-dialog-card{width:min(960px,calc(100vw - 32px));max-height:min(86vh,820px);display:flex;flex-direction:column;border:1px solid var(--line2);background:var(--panel);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.portrait-dialog-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.portrait-dialog-title h3{margin:0;font-size:17px;font-weight:700;color:var(--tx)}
+.portrait-dialog-title .portrait-count{font-size:12px;color:var(--tx3);margin-left:8px;font-weight:400}
+.portrait-dialog-toolbar{padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);display:grid;gap:10px}
+.portrait-modal-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.portrait-tab-group{display:inline-flex;padding:3px;background:var(--control-bg);border:1px solid var(--control-border);border-radius:9px;gap:3px}
+.portrait-tab-btn{min-height:30px;padding:0 12px;border:0;border-radius:7px;background:transparent;color:var(--control-text);font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+.portrait-tab-btn[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-text)}
+.portrait-hair-chips{display:flex;flex-wrap:wrap;gap:6px}
+.portrait-chip-btn{min-height:28px;padding:0 10px;border-radius:99px;border:1px solid var(--control-border);background:var(--panel);color:var(--control-text);font-size:12px;cursor:pointer;transition:.15s}
+.portrait-chip-btn:hover{color:var(--tx);border-color:var(--control-hover-border)}
+.portrait-chip-btn[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-text);border-color:var(--selected-bg)}
+.portrait-search-input{width:100%;min-height:38px;padding:0 12px;border:1px solid var(--control-border);border-radius:8px;background:var(--bg2);color:var(--tx);font-size:13px;outline:none}
+.portrait-search-input:focus{border-color:var(--ac)}
+.portrait-dialog-body{flex:1;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;background:var(--bg)}
+.portrait-item-card{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+.portrait-item-card:hover{transform:translateY(-2px);border-color:var(--ac);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.portrait-item-ph{position:relative;aspect-ratio:4/5;background:var(--image-bg);overflow:hidden}
+.portrait-item-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait-item-badge{position:absolute;top:6px;left:6px;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-weight:700}
+.portrait-item-meta{padding:8px;display:grid;gap:2px}
+.portrait-item-meta strong{font-size:12px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.portrait-item-meta span{font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -472,12 +512,22 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
         <span class="db-name" data-i18n="dbAnime">二次元动漫版</span>
         <em class="db-count" id="dbAnimeCount">1,320</em>
       </button>
+      <button type="button" class="db-tab" data-db="portrait" aria-selected="false" role="tab">
+        <svg class="db-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+        <span class="db-name" data-i18n="dbPortrait">AI 模特脸部库</span>
+        <em class="db-count" id="dbPortraitCount">1,499</em>
+      </button>
     </div>
   </div>
 </header>
 
 <div class="tools"><div class="tools-in">
   <div class="tabs" id="tabs" role="tablist" aria-label="分类"></div>
+  <div class="portrait-subtabs" id="portraitSubtabs" role="group" aria-label="模特模式" hidden>
+    <button type="button" class="portrait-subtab" data-sec="all" aria-pressed="true" data-i18n="portraitSecAll">全部模式 (1,499)</button>
+    <button type="button" class="portrait-subtab" data-sec="face" aria-pressed="false" data-i18n="portraitSecFace">脸部特写 (893)</button>
+    <button type="button" class="portrait-subtab" data-sec="styling" aria-pressed="false" data-i18n="portraitSecStyling">整体造型 (606)</button>
+  </div>
   <div class="row2">
     <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" data-i18n-placeholder="searchPh" placeholder="按 ID・关键词搜索　例：denim、白" autocomplete="off" aria-label="搜索"></label>
@@ -553,6 +603,12 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
             <img id="fitPhotoPreview" alt="">
             <button type="button" class="rm" id="fitPhotoRm" aria-label="移除照片">×</button>
           </div>
+        </div>
+        <div class="portrait-quick-row">
+          <button type="button" class="btn-portrait-quick" id="btnOpenPortraitModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+            <span data-i18n="fitSelectPortrait">✨ 从 AI 模特库挑选 (1499位模特)</span>
+          </button>
         </div>
         <div class="step-compress-row">
           <label class="step-compress-toggle" for="fitCompress">
@@ -781,8 +837,40 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
   </div>
 </div>
 
+<!-- ===== AI 模特选择弹窗 ===== -->
+<div class="settings-overlay portrait-overlay" id="portraitModalOverlay" role="dialog" aria-modal="true" aria-labelledby="portraitModalTitle" hidden>
+  <div class="portrait-dialog-card">
+    <div class="portrait-dialog-header">
+      <div class="portrait-dialog-title">
+        <h3 id="portraitModalTitle" data-i18n="portraitModalTitle">选择一位 AI 模特</h3>
+        <span class="portrait-count" id="portraitModalCount">共 1,499 位</span>
+      </div>
+      <button type="button" class="settings-close" id="portraitModalClose" aria-label="关闭">×</button>
+    </div>
+    <div class="portrait-dialog-toolbar">
+      <div class="portrait-modal-filters">
+        <div class="portrait-tab-group" id="portraitModalSecTabs">
+          <button type="button" class="portrait-tab-btn" data-sec="all" aria-pressed="true" data-i18n="portraitSecAll">全部</button>
+          <button type="button" class="portrait-tab-btn" data-sec="face" aria-pressed="false" data-i18n="portraitSecFace">脸部特写 (893)</button>
+          <button type="button" class="portrait-tab-btn" data-sec="styling" aria-pressed="false" data-i18n="portraitSecStyling">整体造型 (606)</button>
+        </div>
+        <div class="portrait-hair-chips" id="portraitModalHairChips">
+          <button type="button" class="portrait-chip-btn" data-hair="" aria-pressed="true" data-i18n="all">全部发型</button>
+          <button type="button" class="portrait-chip-btn" data-hair="短发" aria-pressed="false" data-i18n="catShort">短发</button>
+          <button type="button" class="portrait-chip-btn" data-hair="中发" aria-pressed="false" data-i18n="catMedium">中发</button>
+          <button type="button" class="portrait-chip-btn" data-hair="中长发" aria-pressed="false" data-i18n="catSemiLong">中长发</button>
+          <button type="button" class="portrait-chip-btn" data-hair="长发" aria-pressed="false" data-i18n="catLong">长发</button>
+        </div>
+      </div>
+      <input type="search" class="portrait-search-input" id="portraitModalSearch" placeholder="搜索发型、波波头、微卷、一刀切…" data-i18n-placeholder="portraitSearchPh">
+    </div>
+    <div class="portrait-dialog-body" id="portraitModalGrid"></div>
+  </div>
+</div>
+
 <script src="data.js"></script>
 <script src="data-anime.js"></script>
+<script src="data-portrait.js"></script>
 <script>
 // ===== 双语字典 =====
 const I18N = {
@@ -790,10 +878,13 @@ const I18N = {
     eyebrow: 'COSTUME-DB-01 · 拍片哥女装参考图集',
     eyebrowReal: 'COSTUME-DB-01 · 拍片哥女装参考图集',
     eyebrowAnime: 'COSTUME-ANIME-DB · 拍片哥动漫女装图集',
+    eyebrowPortrait: 'Free Face Reference Library · AI 模特人像与造型库',
     dbReal: '写实真人版',
     dbAnime: '二次元动漫版',
+    dbPortrait: 'AI 模特脸部库',
     subtitleReal: '人物不入镜的纯服装图像（2:3）。可按春・夏・秋・冬・内衣・派对・泳装・性感分类浏览。',
     subtitleAnime: '人物不入镜的动漫调纯服装图像（2:3）。可按春・夏・秋・冬・内衣・派对・泳装・性感分类浏览。',
+    subtitlePortrait: '收录 1,499 位精选 AI 模特人像（893 位正面脸部特写 + 606 位造型穿搭参考）。支持按发型与脸型快速筛选，一键设为试穿模特。',
     fitDbReal: '写实版 (1407)',
     fitDbAnime: '动漫版 (1320)',
     titleWord: '拍片哥女装',
@@ -829,6 +920,13 @@ const I18N = {
     // 分类名（中文）
     catSpring: '春', catSummer: '夏', catAutumn: '秋', catWinter: '冬',
     catLingerie: '内衣', catParty: '派对', catSwimwear: '泳装', catSexy: '性感',
+    catShort: '短发', catMedium: '中发', catSemiLong: '中长发', catLong: '长发',
+    aiUseModelCard: '设为模特', aiUseModelThis: '设为试穿模特',
+    fitSelectPortrait: '✨ 从 AI 模特库挑选 (1499位模特)',
+    portraitModalTitle: '选择一位 AI 模特',
+    portraitSecAll: '全部模式', portraitSecFace: '脸部特写 (893)', portraitSecStyling: '整体造型 (606)',
+    portraitSearchPh: '搜索发型、风格（例：波波头、微卷、一刀切、黑发）…',
+    portraitPickedNotice: '已选定模特：',
     // AI 试穿
     fittingTab: 'AI 试穿',
     themeToDark: '黑色主题', themeToLight: '白色主题',
@@ -923,10 +1021,13 @@ const I18N = {
     eyebrow: 'COSTUME-DB-01 · PaipianGe Costume Reference Gallery',
     eyebrowReal: 'COSTUME-DB-01 · PaipianGe Costume Reference Gallery',
     eyebrowAnime: 'COSTUME-ANIME-DB · PaipianGe Anime Costume Gallery',
+    eyebrowPortrait: 'Free Face Reference Library · AI Portrait & Styling DB',
     dbReal: 'Realistic',
     dbAnime: 'Anime Style',
+    dbPortrait: 'AI Models (Portraits)',
     subtitleReal: 'Person-free costume images (2:3). Browse by Spring, Summer, Autumn, Winter, Lingerie, Party, Swimwear, and Sexy categories.',
     subtitleAnime: 'Anime-style person-free costume images (2:3). Browse by Spring, Summer, Autumn, Winter, Lingerie, Party, Swimwear, and Sexy categories.',
+    subtitlePortrait: '1,499 curated AI portraits (893 face references + 606 styling looks). Filter by hairstyle, and use as try-on model in 1-click.',
     fitDbReal: 'Real (1407)',
     fitDbAnime: 'Anime (1320)',
     titleWord: 'PaipianGe',
@@ -961,6 +1062,13 @@ const I18N = {
     footerNote: 'PaipianGe Costumes COSTUME-DB-01 · Open Source under MIT License · Free for Commercial Use',
     catSpring: 'Spring', catSummer: 'Summer', catAutumn: 'Autumn', catWinter: 'Winter',
     catLingerie: 'Lingerie', catParty: 'Party', catSwimwear: 'Swimwear', catSexy: 'Sexy',
+    catShort: 'Short', catMedium: 'Medium', catSemiLong: 'Semi-Long', catLong: 'Long',
+    aiUseModelCard: 'Use as Model', aiUseModelThis: 'Use as Try-On Model',
+    fitSelectPortrait: '✨ Pick from AI Models (1499)',
+    portraitModalTitle: 'Select an AI Model',
+    portraitSecAll: 'All Sections', portraitSecFace: 'Face Only (893)', portraitSecStyling: 'Styling (606)',
+    portraitSearchPh: 'Search hairstyle, bob, waves, blunt...',
+    portraitPickedNotice: 'Model selected: ',
     // AI try-on
     fittingTab: 'AI Try-On',
     themeToDark: 'Dark theme', themeToLight: 'Light theme',
@@ -1056,7 +1164,8 @@ const I18N = {
 // ===== 分类名映射（数据里是日文，需要映射到当前语言）=====
 const CAT_KEY = {
   '春': 'catSpring', '夏': 'catSummer', '秋': 'catAutumn', '冬': 'catWinter',
-  'ランジェリー': 'catLingerie', 'パーティ': 'catParty', '水着': 'catSwimwear', 'セクシー': 'catSexy'
+  'ランジェリー': 'catLingerie', 'パーティ': 'catParty', '水着': 'catSwimwear', 'セクシー': 'catSexy',
+  '短发': 'catShort', '中发': 'catMedium', '中长发': 'catSemiLong', '长发': 'catLong'
 };
 
 // ===== 关键词翻译映射：以英文关键词为基准（数据里的キーワード是英文）=====
@@ -1106,23 +1215,28 @@ const THEME_STORAGE_KEY = 'nvzhuang_theme';
 const DB_STORAGE_KEY = 'nvzhuang_db';
 let THEME = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 
-// 当前图库版本：'real'（写实版 1407 套）或 'anime'（二次元动漫版 1320 套）
+// 当前图库版本：'real'（写实服装 1407 套）、'anime'（二次元服装 1320 套）或 'portrait'（AI 模特库 1499 位）
 let CURRENT_DB = 'real';
+let PORTRAIT_SEC = 'all'; // 模特筛选：'all' | 'face' | 'styling'
 try {
   const urlParam = new URLSearchParams(window.location.search).get('db');
-  if (urlParam === 'anime' || urlParam === 'real') {
+  if (urlParam === 'anime' || urlParam === 'real' || urlParam === 'portrait') {
     CURRENT_DB = urlParam;
   } else {
     const saved = localStorage.getItem(DB_STORAGE_KEY);
-    if (saved === 'anime' || saved === 'real') CURRENT_DB = saved;
+    if (saved === 'anime' || saved === 'real' || saved === 'portrait') CURRENT_DB = saved;
   }
 } catch(_) {}
 
 function getActiveD(){
-  return (CURRENT_DB === 'anime' && typeof D_ANIME !== 'undefined') ? D_ANIME : D;
+  if (CURRENT_DB === 'portrait' && typeof D_PORTRAIT !== 'undefined') return D_PORTRAIT;
+  if (CURRENT_DB === 'anime' && typeof D_ANIME !== 'undefined') return D_ANIME;
+  return D;
 }
 function getActiveMeta(){
-  return (CURRENT_DB === 'anime' && typeof META_ANIME !== 'undefined') ? META_ANIME : META;
+  if (CURRENT_DB === 'portrait' && typeof META_PORTRAIT !== 'undefined') return META_PORTRAIT;
+  if (CURRENT_DB === 'anime' && typeof META_ANIME !== 'undefined') return META_ANIME;
+  return META;
 }
 
 const $=s=>document.querySelector(s);
@@ -1169,16 +1283,22 @@ function updateDbUI(){
   });
   const eyebrowEl = document.querySelector('[data-i18n="eyebrow"]');
   if (eyebrowEl) {
-    eyebrowEl.textContent = t(CURRENT_DB === 'anime' ? 'eyebrowAnime' : 'eyebrowReal');
+    if (CURRENT_DB === 'portrait') eyebrowEl.textContent = t('eyebrowPortrait');
+    else eyebrowEl.textContent = t(CURRENT_DB === 'anime' ? 'eyebrowAnime' : 'eyebrowReal');
   }
   const subEl = document.getElementById('heroSubtitle');
   if (subEl) {
-    subEl.textContent = t(CURRENT_DB === 'anime' ? 'subtitleAnime' : 'subtitleReal');
+    if (CURRENT_DB === 'portrait') subEl.textContent = t('subtitlePortrait');
+    else subEl.textContent = t(CURRENT_DB === 'anime' ? 'subtitleAnime' : 'subtitleReal');
+  }
+  const portraitSubtabs = document.getElementById('portraitSubtabs');
+  if (portraitSubtabs) {
+    portraitSubtabs.hidden = (CURRENT_DB !== 'portrait');
   }
 }
 
 function setDatabase(db, syncUrl = true){
-  if (db !== 'real' && db !== 'anime') return;
+  if (db !== 'real' && db !== 'anime' && db !== 'portrait') return;
   CURRENT_DB = db;
   try {
     localStorage.setItem(DB_STORAGE_KEY, db);
@@ -1193,6 +1313,7 @@ function setDatabase(db, syncUrl = true){
   S.cat = '';
   S.random = false;
   S.n = PAGE;
+  PORTRAIT_SEC = 'all';
   reshuffle();
   updateDbUI();
   drawTabs();
@@ -1274,6 +1395,19 @@ function drawTabs(){
   }).join('');
 }
 $('#tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;const v=b.dataset.v;if(v===RANDOM_TAB){S.cat='';S.random=true;reshuffle()}else{S.cat=v;S.random=false}S.n=PAGE;drawTabs();draw();scrollTo({top:Math.min(scrollY,$('.tools').offsetTop)})};
+const portraitSubtabsEl = document.getElementById('portraitSubtabs');
+if (portraitSubtabsEl) {
+  portraitSubtabsEl.onclick = e => {
+    const btn = e.target.closest('.portrait-subtab');
+    if (!btn) return;
+    PORTRAIT_SEC = btn.dataset.sec || 'all';
+    portraitSubtabsEl.querySelectorAll('.portrait-subtab').forEach(b => {
+      b.setAttribute('aria-pressed', String(b === btn));
+    });
+    S.n = PAGE;
+    draw();
+  };
+}
 
 // ===== 搜索 =====
 let qt;$('#q').oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.value.trim().toLowerCase();S.n=PAGE;draw()},150)};
@@ -1282,22 +1416,34 @@ let qt;$('#q').oninput=e=>{clearTimeout(qt);qt=setTimeout(()=>{S.q=e.target.valu
 function buildIndex(d){
   const idx = new Set();
   idx.add(d.id.toLowerCase());
-  idx.add(d.カテゴリ);              // 日文分类（如「春」）
-  // 当前语言分类名
+  idx.add(String(d.カテゴリ).toLowerCase());
   idx.add(catName(d.カテゴリ).toLowerCase());
+  if (d.isPortrait) {
+    if (d.sec) idx.add(d.sec.toLowerCase());
+    if (d.secZh) idx.add(d.secZh.toLowerCase());
+    if (d.hair) idx.add(d.hair.toLowerCase());
+    if (d.hairZh) idx.add(d.hairZh.toLowerCase());
+    if (d.hairEn) idx.add(d.hairEn.toLowerCase());
+    if (d.style) idx.add(d.style.toLowerCase());
+    if (d.styleZh) idx.add(d.styleZh.toLowerCase());
+    if (d.styleEn) idx.add(d.styleEn.toLowerCase());
+    String(d.キーワード || '').split(/\s+/).forEach(w => { if (w) idx.add(w.toLowerCase()); });
+    return idx;
+  }
   // 英文分类名（始终收录，方便英文搜索）
   const enCat = { '春':'spring','夏':'summer','秋':'autumn','冬':'winter','ランジェリー':'lingerie','パーティ':'party','水着':'swimwear','セクシー':'sexy' }[d.カテゴリ];
   if (enCat) idx.add(enCat);
   // 关键词词元（英文）
   d.キーワード.split(' ').forEach(w=>{
-    idx.add(w);
+    idx.add(w.toLowerCase());
     const zh = EN2ZH[w];
-    if (zh) idx.add(zh);          // 中文翻译
+    if (zh) idx.add(zh.toLowerCase());
   });
   return idx;
 }
 function hit(d){
   if(S.cat && d.カテゴリ!==S.cat) return false;
+  if(d.isPortrait && PORTRAIT_SEC !== 'all' && d.sec !== PORTRAIT_SEC) return false;
   if(!S.q) return true;
   const idx = buildIndex(d);
   const words = S.q.split(/\s+/).filter(Boolean);
@@ -1316,6 +1462,24 @@ function hit(d){
 // ===== 卡片渲染 =====
 let VIEW=[];
 function card(d,i){
+  if (d.isPortrait) {
+    const btnLabel = t('aiUseModelCard');
+    const tag = `${catName(d.カテゴリ)} · ${d.secZh}`;
+    const desc = d.styleZh || d.hairZh;
+    return `<article class="card card-portrait" tabindex="0" data-i="${i}">
+      <div class="ph">
+        <img loading="lazy" decoding="async" src="assets/${esc(d.サムネ)}" alt="${esc(d.id)}">
+        <button type="button" class="tryon-chip tryon-chip-portrait" data-try-portrait="${esc(d.id)}" title="${esc(btnLabel)}">💃 ${esc(btnLabel)}</button>
+      </div>
+      <div class="meta">
+        <div class="row">
+          <div class="id">${esc(d.id)}</div>
+          <div class="cat cat-portrait">${esc(tag)}</div>
+        </div>
+        <div class="desc">${esc(desc)}</div>
+      </div>
+    </article>`;
+  }
   const kw = d.キーワード.split(' ').map(wordName).join(' · ');
   return `<article class="card" tabindex="0" data-i="${i}"><div class="ph"><img loading="lazy" decoding="async" src="assets/${esc(d.サムネ)}" alt="${esc(d.id)}"><button type="button" class="tryon-chip" data-try="${esc(d.id)}" title="${t('aiTryCard')}">${t('aiTryCard')}</button></div>
   <div class="meta"><div class="row"><div class="id">${esc(d.id)}</div><div class="cat">${esc(catName(d.カテゴリ))}</div></div><div class="desc">${esc(kw)}</div></div></article>`;
@@ -1338,6 +1502,12 @@ function addMore(){
 $('#more').onclick=addMore;
 if('IntersectionObserver' in window){new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting))addMore()},{rootMargin:'800px'}).observe($('#more'))}
 $('#grid').addEventListener('click',e=>{
+  const chipPortrait = e.target.closest('.tryon-chip-portrait');
+  if(chipPortrait){
+    e.stopPropagation();
+    if(window.openFitWithPerson) window.openFitWithPerson(chipPortrait.dataset.tryPortrait);
+    return;
+  }
   const chip=e.target.closest('.tryon-chip');
   if(chip){ e.stopPropagation(); if(window.openFitWith) window.openFitWith(chip.dataset.try); return; }
   const c=e.target.closest('.card');if(c)openM(+c.dataset.i);
@@ -1356,8 +1526,8 @@ function showM(){
   full.src='assets/'+d.画像;
   img.alt=d.id;
   $('#mtitle').textContent=d.id;
-  $('#mcat').textContent=catName(d.カテゴリ);
-  $('#mdesc').textContent=d.キーワード.split(' ').map(wordName).join(' · ');
+  $('#mcat').textContent=d.isPortrait ? `${catName(d.カテゴリ)} · ${d.secZh}` : catName(d.カテゴリ);
+  $('#mdesc').textContent=d.isPortrait ? (d.styleZh ? `${d.styleZh}（${d.hairZh}）` : d.hairZh) : d.キーワード.split(' ').map(wordName).join(' · ');
   const dl=$('#mdl');dl.href=d.原寸;dl.setAttribute('download',d.id+'.png');
   dl.onclick = e => {
     // 平滑探测原寸 PNG，若不可达则回退到本地 webp
@@ -1381,14 +1551,38 @@ function showM(){
       });
     }
   };
+  const mtryon=$('#mtryon');
+  if(mtryon){
+    if(d.isPortrait){
+      mtryon.textContent='💃 ' + t('aiUseModelThis');
+      mtryon.dataset.isPortrait='1';
+    }else{
+      mtryon.textContent=t('aiTryThis');
+      delete mtryon.dataset.isPortrait;
+    }
+  }
   const mbuy=$('#mbuy');
-  if(mbuy)mbuy.onclick=()=>{if(window.searchTaobaoByImage)window.searchTaobaoByImage('assets/'+d.画像,`taobao-${d.id}.png`)};
+  if(mbuy) {
+    mbuy.hidden = !!d.isPortrait;
+    if(!d.isPortrait) mbuy.onclick=()=>{if(window.searchTaobaoByImage)window.searchTaobaoByImage('assets/'+d.画像,`taobao-${d.id}.png`)};
+  }
   const mpdd=$('#mpdd');
-  if(mpdd)mpdd.onclick=()=>{if(window.searchPinduoduoByImage)window.searchPinduoduoByImage('assets/'+d.画像,`pinduoduo-${d.id}.png`)};
+  if(mpdd) {
+    mpdd.hidden = !!d.isPortrait;
+    if(!d.isPortrait) mpdd.onclick=()=>{if(window.searchPinduoduoByImage)window.searchPinduoduoByImage('assets/'+d.画像,`pinduoduo-${d.id}.png`)};
+  }
 }
 function step(n){const j=MI+n;if(j<0||j>=VIEW.length)return;MI=j;if(j>=S.n)addMore();showM()}
 $('#mprev').onclick=()=>step(-1);$('#mnext').onclick=()=>step(1);$('#mclose').onclick=closeM;
-$('#mtryon').onclick=()=>{ const d=VIEW[MI]; if(!d) return; closeM(); if(window.openFitWith) window.openFitWith(d.id); };
+$('#mtryon').onclick=()=>{
+  const d=VIEW[MI]; if(!d) return;
+  closeM();
+  if(d.isPortrait){
+    if(window.openFitWithPerson) window.openFitWithPerson(d.id);
+  }else{
+    if(window.openFitWith) window.openFitWith(d.id);
+  }
+};
 $('#modal').onclick=e=>{if(e.target.id==='modal')closeM()};
 document.addEventListener('keydown',e=>{
   if(!$('#modal').classList.contains('open'))return;
@@ -2245,6 +2439,30 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
     open();
   };
 
+  // 暴露给外部（模特卡片 / 模特弹窗）：带着指定模特人像打开试穿页
+  window.openFitWithPerson = (portraitId) => {
+    const list = typeof D_PORTRAIT !== 'undefined' ? D_PORTRAIT : [];
+    const d = list.find(x => x.id === portraitId);
+    if (d) {
+      setPersonFromUrl('assets/' + d.サムネ);
+    }
+    open();
+  };
+
+  function setPersonFromUrl(url){
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      personSrc = url;
+      photoPreview.src = url;
+      photoWrap.hidden = false;
+    };
+    img.onerror = () => {
+      showTryonError(t('errInvalidImageBase64'));
+    };
+    img.src = url;
+  }
+
   // ===== 上传头像 =====
   const photoWrap = document.getElementById('fitPhotoWrap');
   const photoPreview = document.getElementById('fitPhotoPreview');
@@ -2291,6 +2509,147 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
     photoWrap.hidden = true;
     photoPreview.src = '';
   });
+
+  // ===== 模特选择弹窗逻辑 =====
+  const portraitOverlay = document.getElementById('portraitModalOverlay');
+  const btnOpenPortraitModal = document.getElementById('btnOpenPortraitModal');
+  const portraitModalClose = document.getElementById('portraitModalClose');
+  const portraitModalSecTabs = document.getElementById('portraitModalSecTabs');
+  const portraitModalHairChips = document.getElementById('portraitModalHairChips');
+  const portraitModalSearch = document.getElementById('portraitModalSearch');
+  const portraitModalGrid = document.getElementById('portraitModalGrid');
+  const portraitModalCount = document.getElementById('portraitModalCount');
+
+  let pSec = 'all';
+  let pHair = '';
+  let pSearch = '';
+  let pShown = 48;
+  let pFiltered = [];
+
+  function filterPortraits(){
+    const list = typeof D_PORTRAIT !== 'undefined' ? D_PORTRAIT : [];
+    const q = pSearch.trim().toLowerCase();
+    pFiltered = list.filter(item => {
+      if(pSec !== 'all' && item.sec !== pSec) return false;
+      if(pHair && item.hairZh !== pHair) return false;
+      if(!q) return true;
+      const kw = `${item.id} ${item.secZh} ${item.hairZh} ${item.hairEn} ${item.styleZh} ${item.styleEn} ${item.hair} ${item.style}`.toLowerCase();
+      return kw.includes(q);
+    });
+  }
+
+  function renderPortraitGrid(append = false){
+    if(!append){
+      portraitModalGrid.innerHTML = '';
+      pShown = 48;
+    }
+    const chunk = pFiltered.slice(append ? pShown - 48 : 0, pShown);
+    if(!pFiltered.length){
+      portraitModalGrid.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>${t('noResultTitle')}</b>${t('noResultSub')}</div>`;
+      if(portraitModalCount) portraitModalCount.textContent = '0';
+      return;
+    }
+    if(portraitModalCount) portraitModalCount.textContent = `${pFiltered.length} 位`;
+
+    const frag = document.createDocumentFragment();
+    chunk.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'portrait-item-card';
+      card.tabIndex = 0;
+      card.innerHTML = `
+        <div class="portrait-item-ph">
+          <img loading="lazy" decoding="async" src="assets/${esc(item.サムネ)}" alt="${esc(item.id)}">
+          <span class="portrait-item-badge">${esc(item.secZh)}</span>
+        </div>
+        <div class="portrait-item-meta">
+          <strong>${esc(item.hairZh)}</strong>
+          <span title="${esc(item.styleZh || item.id)}">${esc(item.styleZh || item.id)}</span>
+        </div>
+      `;
+      card.onclick = () => {
+        setPersonFromUrl('assets/' + item.サムネ);
+        closePortraitModal();
+      };
+      card.onkeydown = e => {
+        if(e.key === 'Enter'){
+          setPersonFromUrl('assets/' + item.サムネ);
+          closePortraitModal();
+        }
+      };
+      frag.appendChild(card);
+    });
+    portraitModalGrid.appendChild(frag);
+  }
+
+  function openPortraitModal(){
+    filterPortraits();
+    renderPortraitGrid(false);
+    portraitOverlay.hidden = false;
+  }
+  function closePortraitModal(){
+    portraitOverlay.hidden = true;
+  }
+
+  if(btnOpenPortraitModal){
+    btnOpenPortraitModal.onclick = openPortraitModal;
+  }
+  if(portraitModalClose){
+    portraitModalClose.onclick = closePortraitModal;
+  }
+  if(portraitOverlay){
+    portraitOverlay.onclick = e => {
+      if(e.target === portraitOverlay) closePortraitModal();
+    };
+  }
+
+  if(portraitModalSecTabs){
+    portraitModalSecTabs.onclick = e => {
+      const btn = e.target.closest('.portrait-tab-btn');
+      if(!btn) return;
+      pSec = btn.dataset.sec || 'all';
+      portraitModalSecTabs.querySelectorAll('.portrait-tab-btn').forEach(b => {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      filterPortraits();
+      renderPortraitGrid(false);
+    };
+  }
+
+  if(portraitModalHairChips){
+    portraitModalHairChips.onclick = e => {
+      const btn = e.target.closest('.portrait-chip-btn');
+      if(!btn) return;
+      pHair = btn.dataset.hair || '';
+      portraitModalHairChips.querySelectorAll('.portrait-chip-btn').forEach(b => {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      filterPortraits();
+      renderPortraitGrid(false);
+    };
+  }
+
+  let pSearchTimer;
+  if(portraitModalSearch){
+    portraitModalSearch.oninput = e => {
+      clearTimeout(pSearchTimer);
+      pSearchTimer = setTimeout(() => {
+        pSearch = e.target.value;
+        filterPortraits();
+        renderPortraitGrid(false);
+      }, 150);
+    };
+  }
+
+  if(portraitModalGrid){
+    portraitModalGrid.onscroll = () => {
+      if(portraitModalGrid.scrollTop + portraitModalGrid.clientHeight >= portraitModalGrid.scrollHeight - 200){
+        if(pShown < pFiltered.length){
+          pShown += 48;
+          renderPortraitGrid(true);
+        }
+      }
+    };
+  }
 
   // ===== 上传自定义服装 =====
   fitGarmentUpload.addEventListener('click', ()=>{ garmentUploadIntent = 'replace'; });
