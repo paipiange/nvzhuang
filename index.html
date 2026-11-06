@@ -183,8 +183,8 @@ footer a:hover{color:var(--tx);text-decoration:underline}
 .step-head h3{margin:0;font-size:16px;font-weight:700}
 /* 上传照片 */
 .step-photo-row{display:flex;gap:14px;align-items:stretch}
-.step-photo-row .upload-zone{flex:1}
-.step-photo-row .fit-photo{flex:1;margin:0}
+.step-photo-row .upload-zone,.step-photo-row .fit-photo,.step-photo-row .portrait-quick-row{flex:1 1 0;min-width:0}
+.step-photo-row .fit-photo{margin:0}
 .upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:1px dashed var(--control-border);border-radius:12px;padding:22px 16px;cursor:pointer;text-align:center;color:var(--tx2);transition:.15s;min-height:140px}
 .upload-zone:hover{border-color:var(--ac);color:var(--tx)}
 .upload-zone .ico{font-size:28px}
@@ -413,10 +413,11 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
 .portrait-subtab[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-text);border-color:var(--selected-bg)}
 
 /* 试衣间模特选择触发区 */
-.portrait-quick-row{margin:10px 0 6px}
-.btn-portrait-quick{width:100%;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;border:1px dashed var(--ac);border-radius:10px;background:rgba(143,180,255,.08);color:var(--ac2);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s ease}
+.portrait-quick-row{margin:0;display:flex}
+.btn-portrait-quick{width:100%;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px 14px;border:1px dashed var(--ac);border-radius:12px;background:rgba(143,180,255,.08);color:var(--ac2);font-size:13px;font-weight:700;line-height:1.5;text-align:center;cursor:pointer;transition:all .18s ease}
 .btn-portrait-quick:hover{background:rgba(143,180,255,.16);border-color:var(--ac2);transform:translateY(-1px)}
 .btn-portrait-quick svg{flex-shrink:0}
+@media (max-width:560px){.btn-portrait-quick{min-height:88px;flex-direction:row}}
 
 /* 模特选择弹窗抽屉 */
 .portrait-dialog-card{width:min(960px,calc(100vw - 32px));max-height:min(86vh,820px);display:flex;flex-direction:column;border:1px solid var(--line2);background:var(--panel);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
@@ -434,15 +435,60 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
 .portrait-chip-btn[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-text);border-color:var(--selected-bg)}
 .portrait-search-input{width:100%;min-height:38px;padding:0 12px;border:1px solid var(--control-border);border-radius:8px;background:var(--bg2);color:var(--tx);font-size:13px;outline:none}
 .portrait-search-input:focus{border-color:var(--ac)}
-.portrait-dialog-body{flex:1;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;background:var(--bg)}
-.portrait-item-card{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
+.portrait-dialog-body{flex:1;min-height:0;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));grid-auto-rows:max-content;align-content:start;gap:12px;background:var(--bg)}
+.portrait-item-card{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);cursor:pointer;transition:transform .15s,border-color .15s,box-shadow .15s}
 .portrait-item-card:hover{transform:translateY(-2px);border-color:var(--ac);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.portrait-item-card.is-active{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
 .portrait-item-ph{position:relative;aspect-ratio:4/5;background:var(--image-bg);overflow:hidden}
-.portrait-item-ph img{width:100%;height:100%;object-fit:cover;display:block}
-.portrait-item-badge{position:absolute;top:6px;left:6px;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-weight:700}
+.portrait-item-ph img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s ease}
+.portrait-item-card:hover .portrait-item-ph img{transform:scale(1.04)}
+.portrait-item-badge{position:absolute;top:6px;left:6px;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;font-weight:700;z-index:2}
+.portrait-item-active-tag{position:absolute;top:6px;right:6px;padding:2px 6px;border-radius:4px;background:var(--ac);color:#111;font-size:10px;font-weight:700;z-index:2}
+.portrait-item-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .18s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;z-index:3}
+.portrait-item-card:hover .portrait-item-overlay,.portrait-item-card:focus-within .portrait-item-overlay{opacity:1}
+.portrait-btn-preview,.portrait-btn-select{width:100%;min-height:30px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;border:0;transition:all .12s ease}
+.portrait-btn-preview{background:rgba(255,255,255,.95);color:#111}
+.portrait-btn-preview:hover{background:#fff;transform:scale(1.02)}
+.portrait-btn-select{background:var(--ac);color:#111}
+.portrait-btn-select:hover{filter:brightness(1.1);transform:scale(1.02)}
 .portrait-item-meta{padding:8px;display:grid;gap:2px}
 .portrait-item-meta strong{font-size:12px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .portrait-item-meta span{font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* AI 模特挑选 - 大图预览浮层 */
+.portrait-preview-overlay{z-index:98}
+.portrait-preview-card{width:min(980px,calc(100vw - 32px));max-height:min(90vh,860px);display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,360px);gap:20px;border:1px solid var(--line2);background:var(--bg2);border-radius:18px;box-shadow:var(--sh);overflow:hidden;padding:16px}
+@media (max-width: 720px) {
+  .portrait-preview-card{grid-template-columns:1fr;max-height:92vh;overflow-y:auto;gap:14px;padding:12px}
+}
+.portrait-preview-box{position:relative;background:var(--image-bg);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:0;height:min(76vh,780px)}
+@media (max-width: 720px) {
+  .portrait-preview-box{height:46vh;min-height:280px}
+}
+.portrait-preview-box img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block}
+.portrait-preview-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:0;background:rgba(13,15,18,.75);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .15s;z-index:4}
+.portrait-preview-nav:hover:not(:disabled){background:rgba(13,15,18,.95);transform:translateY(-50%) scale(1.08)}
+.portrait-preview-nav:disabled{opacity:.25;cursor:not-allowed}
+.portrait-preview-nav.l{left:10px}
+.portrait-preview-nav.r{right:10px}
+.portrait-preview-tag{position:absolute;top:10px;left:10px;padding:4px 10px;border-radius:6px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);color:#fff;font-size:11px;font-weight:700}
+.portrait-preview-side{display:flex;flex-direction:column;gap:14px;min-width:0;padding:6px 4px 6px 0}
+.portrait-preview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.portrait-preview-head h3{margin:0;font-size:19px;font-weight:700;color:var(--tx);font-family:ui-monospace,Menlo,Consolas,monospace}
+.portrait-preview-cat{font-size:12px;color:var(--ac);font-weight:600;margin-top:2px;display:inline-block}
+.portrait-preview-desc-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.portrait-preview-lbl{font-size:11px;color:var(--tx3);letter-spacing:.05em;margin-bottom:6px;font-weight:600}
+.portrait-preview-desc{margin:0;font-size:14px;line-height:1.6;color:var(--tx);word-break:break-word}
+.portrait-preview-meta-list{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.portrait-preview-meta-row{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.portrait-preview-meta-row .lbl{font-size:11px;color:var(--tx3)}
+.portrait-preview-meta-row strong{font-size:13px;color:var(--tx)}
+.portrait-preview-actions{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:10px}
+.portrait-confirm-use-btn{width:100%;cursor:pointer;font-size:15px;font-weight:700;min-height:48px}
+.portrait-back-btn{min-height:40px;border-radius:10px;border:1px solid var(--control-border);background:var(--panel);color:var(--control-text);font-size:13px;font-weight:600;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center}
+.portrait-back-btn:hover{background:var(--recessed-bg);color:var(--tx)}
+.portrait-preview-tip{font-size:11px;color:var(--tx3);text-align:center;line-height:1.6}
+.portrait-preview-tip kbd{border:1px solid var(--line2);border-radius:4px;padding:1px 5px;font-family:inherit;background:var(--panel)}
 </style>
 </head>
 <body>
@@ -599,16 +645,16 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
             <small data-i18n="fitUploadHint">支持 JPG / PNG / WebP（最大 8MB，小图自动放大）</small>
           </label>
           <input type="file" id="fitFile" accept="image/jpeg,image/png,image/webp" hidden>
+          <div class="portrait-quick-row">
+            <button type="button" class="btn-portrait-quick" id="btnOpenPortraitModal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+              <span data-i18n="fitSelectPortrait">✨ 从 AI 模特库挑选 (1499位模特)</span>
+            </button>
+          </div>
           <div class="fit-photo" id="fitPhotoWrap" hidden>
             <img id="fitPhotoPreview" alt="">
             <button type="button" class="rm" id="fitPhotoRm" aria-label="移除照片">×</button>
           </div>
-        </div>
-        <div class="portrait-quick-row">
-          <button type="button" class="btn-portrait-quick" id="btnOpenPortraitModal">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
-            <span data-i18n="fitSelectPortrait">✨ 从 AI 模特库挑选 (1499位模特)</span>
-          </button>
         </div>
         <div class="step-compress-row">
           <label class="step-compress-toggle" for="fitCompress">
@@ -868,6 +914,56 @@ html[data-theme="light"] .db-tab[aria-selected="true"] .db-count{background:rgba
   </div>
 </div>
 
+<!-- ===== AI 模特大图预览与挑选确认弹窗 ===== -->
+<div class="settings-overlay portrait-overlay portrait-preview-overlay" id="portraitPreviewOverlay" role="dialog" aria-modal="true" aria-labelledby="portraitPreviewTitle" hidden>
+  <div class="portrait-preview-card">
+    <div class="portrait-preview-box">
+      <img id="portraitPreviewImg" src="" alt="AI 模特预览大图">
+      <span class="portrait-preview-tag" id="portraitPreviewBadge">脸部特写</span>
+      <button type="button" class="portrait-preview-nav l" id="portraitPreviewPrev" aria-label="上一位模特">‹</button>
+      <button type="button" class="portrait-preview-nav r" id="portraitPreviewNext" aria-label="下一位模特">›</button>
+    </div>
+    <div class="portrait-preview-side">
+      <div class="portrait-preview-head">
+        <div>
+          <h3 id="portraitPreviewTitle">f098ba5f534</h3>
+          <span class="portrait-preview-cat" id="portraitPreviewCat">短发 · 整体造型</span>
+        </div>
+        <button type="button" class="settings-close" id="portraitPreviewClose" aria-label="关闭预览">×</button>
+      </div>
+
+      <div class="portrait-preview-desc-wrap">
+        <div class="portrait-preview-lbl" data-i18n="portraitPreviewDescLabel">造型与特征描述</div>
+        <p class="portrait-preview-desc" id="portraitPreviewDesc">气质微卷短发，清爽自然</p>
+      </div>
+
+      <div class="portrait-preview-meta-list">
+        <div class="portrait-preview-meta-row">
+          <span class="lbl" data-i18n="portraitPreviewHair">发型分类</span>
+          <strong id="portraitPreviewHair">短发</strong>
+        </div>
+        <div class="portrait-preview-meta-row">
+          <span class="lbl" data-i18n="portraitPreviewType">呈现形式</span>
+          <strong id="portraitPreviewType">整体造型</strong>
+        </div>
+      </div>
+
+      <div class="portrait-preview-actions">
+        <button type="button" class="dl dl-try portrait-confirm-use-btn" id="portraitPreviewConfirmBtn">
+          👗 <span data-i18n="portraitConfirmSelect">选定为试穿模特</span>
+        </button>
+        <button type="button" class="portrait-back-btn" id="portraitPreviewBackBtn" data-i18n="portraitBackList">
+          ← 返回模特列表
+        </button>
+      </div>
+
+      <div class="portrait-preview-tip">
+        <kbd>←</kbd> <kbd>→</kbd> <span data-i18n="portraitNavTip">切换模特</span>　<kbd>Esc</kbd> <span data-i18n="close">关闭</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="data.js"></script>
 <script src="data-anime.js"></script>
 <script src="data-portrait.js"></script>
@@ -927,6 +1023,15 @@ const I18N = {
     portraitSecAll: '全部模式', portraitSecFace: '脸部特写 (893)', portraitSecStyling: '整体造型 (606)',
     portraitSearchPh: '搜索发型、风格（例：波波头、微卷、一刀切、黑发）…',
     portraitPickedNotice: '已选定模特：',
+    portraitPreviewBtn: '🔍 预览大图',
+    portraitSelectBtn: '👗 选用模特',
+    portraitPreviewTitle: 'AI 模特详情',
+    portraitPreviewDescLabel: '造型与特征描述',
+    portraitPreviewHair: '发型分类',
+    portraitPreviewType: '呈现形式',
+    portraitConfirmSelect: '选定为试穿模特',
+    portraitBackList: '← 返回模特列表',
+    portraitNavTip: '切换模特',
     // AI 试穿
     fittingTab: 'AI 试穿',
     themeToDark: '黑色主题', themeToLight: '白色主题',
@@ -1069,6 +1174,15 @@ const I18N = {
     portraitSecAll: 'All Sections', portraitSecFace: 'Face Only (893)', portraitSecStyling: 'Styling (606)',
     portraitSearchPh: 'Search hairstyle, bob, waves, blunt...',
     portraitPickedNotice: 'Model selected: ',
+    portraitPreviewBtn: '🔍 Preview',
+    portraitSelectBtn: '👗 Pick Model',
+    portraitPreviewTitle: 'AI Model Details',
+    portraitPreviewDescLabel: 'Styling & Features',
+    portraitPreviewHair: 'Hairstyle',
+    portraitPreviewType: 'Type',
+    portraitConfirmSelect: 'Set as Try-On Model',
+    portraitBackList: '← Back to List',
+    portraitNavTip: 'Switch model',
     // AI try-on
     fittingTab: 'AI Try-On',
     themeToDark: 'Dark theme', themeToLight: 'Light theme',
@@ -1276,10 +1390,6 @@ function updateDbUI(){
   document.querySelectorAll('#dbSwitch .db-tab').forEach(btn => {
     const isSel = btn.dataset.db === CURRENT_DB;
     btn.setAttribute('aria-selected', String(isSel));
-  });
-  document.querySelectorAll('#fitDbSwitch .fit-db-btn').forEach(btn => {
-    const isSel = btn.dataset.db === CURRENT_DB;
-    btn.setAttribute('aria-pressed', String(isSel));
   });
   const eyebrowEl = document.querySelector('[data-i18n="eyebrow"]');
   if (eyebrowEl) {
@@ -1636,6 +1746,29 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
   let uploadedGarmentCompositeUrl = '';
   let garmentUploadIntent = 'replace';
   let fitSearchQ = '';
+  let fitDb = CURRENT_DB === 'anime' ? 'anime' : 'real';
+
+  function getFitD(){
+    if(fitDb === 'anime' && typeof D_ANIME !== 'undefined') return D_ANIME;
+    return D;
+  }
+
+  function updateFitDbUI(){
+    document.querySelectorAll('#fitDbSwitch .fit-db-btn').forEach(btn => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.db === fitDb));
+    });
+  }
+
+  function setFitDatabase(db){
+    if(db !== 'real' && db !== 'anime') return;
+    fitDb = db;
+    if(pickedGarment && !getFitD().some(item => item.id === pickedGarment.id)){
+      pickedGarment = null;
+    }
+    updateFitDbUI();
+    refreshGarments();
+    refreshPicked();
+  }
 
   // ===== 设置中心（仅保存在当前浏览器） =====
   const SETTINGS_KEY = 'paipiange.tryon.settings.v1';
@@ -2406,9 +2539,12 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
   });
 
   // 打开/关闭
-  const open = () => { fitEl.classList.add('open'); document.body.style.overflow='hidden'; refreshGarmentSourceUI(); refreshGarments(); refreshPicked(); refreshConfigUI(); };
+  const open = () => { fitEl.classList.add('open'); document.body.style.overflow='hidden'; updateFitDbUI(); refreshGarmentSourceUI(); refreshGarments(); refreshPicked(); refreshConfigUI(); };
   const close = () => { fitEl.classList.remove('open'); document.body.style.overflow=''; };
-  document.getElementById('fittingToggle').addEventListener('click', open);
+  document.getElementById('fittingToggle').addEventListener('click', () => {
+    setFitDatabase(CURRENT_DB === 'anime' ? 'anime' : 'real');
+    open();
+  });
   document.getElementById('fitBack').addEventListener('click', close);
   document.addEventListener('keydown', e=>{
     if(e.key!=='Escape') return;
@@ -2421,16 +2557,18 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
 
   // 暴露给外部（列表卡片 / 详情弹窗）：带着指定服装打开试穿页
   window.openFitWith = (garmentId) => {
-    let d = getActiveD().find(x => x.id === garmentId);
+    let targetDb = CURRENT_DB === 'anime' ? 'anime' : 'real';
+    let d = (targetDb === 'anime' && typeof D_ANIME !== 'undefined' ? D_ANIME : D).find(x => x.id === garmentId);
     if (!d) {
-      const otherDb = CURRENT_DB === 'anime' ? 'real' : 'anime';
+      const otherDb = targetDb === 'anime' ? 'real' : 'anime';
       const otherList = otherDb === 'anime' ? (typeof D_ANIME !== 'undefined' ? D_ANIME : []) : D;
       d = otherList.find(x => x.id === garmentId);
       if (d) {
-        setDatabase(otherDb);
+        targetDb = otherDb;
       }
     }
     if (d) {
+      setFitDatabase(targetDb);
       pickedGarment = d;
       garmentMode = 'catalog';
       fitSearchQ = '';
@@ -2446,6 +2584,7 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
     if (d) {
       setPersonFromUrl('assets/' + d.サムネ);
     }
+    setFitDatabase('real');
     open();
   };
 
@@ -2551,35 +2690,149 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
     }
     if(portraitModalCount) portraitModalCount.textContent = `${pFiltered.length} 位`;
 
+    const currentImgUrl = personSrc || '';
     const frag = document.createDocumentFragment();
     chunk.forEach(item => {
       const card = document.createElement('div');
-      card.className = 'portrait-item-card';
+      const itemUrl = 'assets/' + item.サムネ;
+      const isSelected = currentImgUrl.endsWith(item.サムネ);
+      card.className = 'portrait-item-card' + (isSelected ? ' is-active' : '');
       card.tabIndex = 0;
       card.innerHTML = `
         <div class="portrait-item-ph">
-          <img loading="lazy" decoding="async" src="assets/${esc(item.サムネ)}" alt="${esc(item.id)}">
+          <img loading="lazy" decoding="async" src="${itemUrl}" alt="${esc(item.id)}">
           <span class="portrait-item-badge">${esc(item.secZh)}</span>
+          ${isSelected ? `<span class="portrait-item-active-tag">✓ 已使用</span>` : ''}
+          <div class="portrait-item-overlay">
+            <button type="button" class="portrait-btn-preview" data-preview-id="${esc(item.id)}">${t('portraitPreviewBtn') || '🔍 预览大图'}</button>
+            <button type="button" class="portrait-btn-select" data-select-id="${esc(item.id)}">${t('portraitSelectBtn') || '👗 选用模特'}</button>
+          </div>
         </div>
         <div class="portrait-item-meta">
           <strong>${esc(item.hairZh)}</strong>
           <span title="${esc(item.styleZh || item.id)}">${esc(item.styleZh || item.id)}</span>
         </div>
       `;
-      card.onclick = () => {
-        setPersonFromUrl('assets/' + item.サムネ);
-        closePortraitModal();
+      // 点击大图预览或选用
+      card.onclick = (e) => {
+        const btnPrev = e.target.closest('.portrait-btn-preview');
+        if(btnPrev){
+          e.stopPropagation();
+          openPortraitPreview(item.id);
+          return;
+        }
+        const btnSel = e.target.closest('.portrait-btn-select');
+        if(btnSel){
+          e.stopPropagation();
+          setPersonFromUrl(itemUrl);
+          closePortraitModal();
+          return;
+        }
+        // 点击卡片默认打开大图预览，让用户清晰查看细节
+        openPortraitPreview(item.id);
       };
       card.onkeydown = e => {
         if(e.key === 'Enter'){
-          setPersonFromUrl('assets/' + item.サムネ);
-          closePortraitModal();
+          openPortraitPreview(item.id);
         }
       };
       frag.appendChild(card);
     });
     portraitModalGrid.appendChild(frag);
   }
+
+  // ===== AI 模特大图预览与挑选确认交互 =====
+  const portraitPreviewOverlay = document.getElementById('portraitPreviewOverlay');
+  const portraitPreviewImg = document.getElementById('portraitPreviewImg');
+  const portraitPreviewBadge = document.getElementById('portraitPreviewBadge');
+  const portraitPreviewPrev = document.getElementById('portraitPreviewPrev');
+  const portraitPreviewNext = document.getElementById('portraitPreviewNext');
+  const portraitPreviewTitle = document.getElementById('portraitPreviewTitle');
+  const portraitPreviewCat = document.getElementById('portraitPreviewCat');
+  const portraitPreviewClose = document.getElementById('portraitPreviewClose');
+  const portraitPreviewDesc = document.getElementById('portraitPreviewDesc');
+  const portraitPreviewHair = document.getElementById('portraitPreviewHair');
+  const portraitPreviewType = document.getElementById('portraitPreviewType');
+  const portraitPreviewConfirmBtn = document.getElementById('portraitPreviewConfirmBtn');
+  const portraitPreviewBackBtn = document.getElementById('portraitPreviewBackBtn');
+
+  let currentPreviewIndex = -1;
+
+  function openPortraitPreview(portraitId){
+    const list = pFiltered.length ? pFiltered : (typeof D_PORTRAIT !== 'undefined' ? D_PORTRAIT : []);
+    const idx = list.findIndex(x => x.id === portraitId);
+    if(idx < 0) return;
+    currentPreviewIndex = idx;
+    showPortraitPreviewItem();
+    if(portraitPreviewOverlay) portraitPreviewOverlay.hidden = false;
+  }
+
+  function showPortraitPreviewItem(){
+    const list = pFiltered.length ? pFiltered : (typeof D_PORTRAIT !== 'undefined' ? D_PORTRAIT : []);
+    if(currentPreviewIndex < 0 || currentPreviewIndex >= list.length) return;
+    const item = list[currentPreviewIndex];
+
+    if(portraitPreviewImg) {
+      portraitPreviewImg.src = 'assets/' + item.サムネ;
+      portraitPreviewImg.alt = item.id;
+    }
+    if(portraitPreviewBadge) portraitPreviewBadge.textContent = item.secZh || '模特人像';
+    if(portraitPreviewTitle) portraitPreviewTitle.textContent = item.id;
+    if(portraitPreviewCat) portraitPreviewCat.textContent = `${item.hairZh} · ${item.secZh}`;
+    if(portraitPreviewDesc) {
+      const desc = item.styleZh ? `${item.styleZh}（${item.hairZh}）` : `${item.hairZh} AI 模特肖像（${item.secZh}）`;
+      portraitPreviewDesc.textContent = desc;
+    }
+    if(portraitPreviewHair) portraitPreviewHair.textContent = item.hairZh || '—';
+    if(portraitPreviewType) portraitPreviewType.textContent = item.secZh || '—';
+
+    if(portraitPreviewPrev) portraitPreviewPrev.disabled = currentPreviewIndex <= 0;
+    if(portraitPreviewNext) portraitPreviewNext.disabled = currentPreviewIndex >= list.length - 1;
+
+    if(portraitPreviewConfirmBtn){
+      portraitPreviewConfirmBtn.onclick = () => {
+        setPersonFromUrl('assets/' + item.サムネ);
+        closePortraitPreview();
+        closePortraitModal();
+      };
+    }
+  }
+
+  function stepPortraitPreview(delta){
+    const list = pFiltered.length ? pFiltered : (typeof D_PORTRAIT !== 'undefined' ? D_PORTRAIT : []);
+    const target = currentPreviewIndex + delta;
+    if(target < 0 || target >= list.length) return;
+    currentPreviewIndex = target;
+    showPortraitPreviewItem();
+  }
+
+  function closePortraitPreview(){
+    if(portraitPreviewOverlay) portraitPreviewOverlay.hidden = true;
+    currentPreviewIndex = -1;
+  }
+
+  if(portraitPreviewClose) portraitPreviewClose.onclick = closePortraitPreview;
+  if(portraitPreviewBackBtn) portraitPreviewBackBtn.onclick = closePortraitPreview;
+  if(portraitPreviewPrev) portraitPreviewPrev.onclick = () => stepPortraitPreview(-1);
+  if(portraitPreviewNext) portraitPreviewNext.onclick = () => stepPortraitPreview(1);
+
+  if(portraitPreviewOverlay){
+    portraitPreviewOverlay.onclick = e => {
+      if(e.target === portraitPreviewOverlay) closePortraitPreview();
+    };
+  }
+
+  document.addEventListener('keydown', e => {
+    if(portraitPreviewOverlay && !portraitPreviewOverlay.hidden){
+      if(e.key === 'Escape') {
+        closePortraitPreview();
+      } else if(e.key === 'ArrowLeft') {
+        stepPortraitPreview(-1);
+      } else if(e.key === 'ArrowRight') {
+        stepPortraitPreview(1);
+      }
+    }
+  });
 
   function openPortraitModal(){
     filterPortraits();
@@ -2732,7 +2985,7 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
 
   // ===== 选择服装 =====
   function getFilteredGarments(){
-    return getActiveD().filter(d=>{
+    return getFitD().filter(d=>{
       if(!fitSearchQ) return true;
       const idx=new Set([d.id.toLowerCase()]);
       idx.add(d.カテゴリ);
@@ -2759,7 +3012,7 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
 
   document.querySelectorAll('#fitDbSwitch .fit-db-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      setDatabase(btn.dataset.db);
+      setFitDatabase(btn.dataset.db);
     });
   });
   window.refreshFitGarments = refreshGarments;
@@ -2782,14 +3035,14 @@ $('#mimg').addEventListener('touchend',e=>{if(tx===null)return;const dx=e.change
 
   garmentList.addEventListener('click', e=>{
     const g=e.target.closest('.g'); if(!g) return;
-    const d = getActiveD().find(x=>x.id===g.dataset.id); if(!d) return;
+    const d = getFitD().find(x=>x.id===g.dataset.id); if(!d) return;
     selectGarment(d);
   });
   garmentList.addEventListener('keydown', e=>{
     if(e.key!=='Enter'&&e.key!==' ') return;
     const g=e.target.closest('.g'); if(!g) return;
     e.preventDefault();
-    const d = getActiveD().find(x=>x.id===g.dataset.id); if(d) selectGarment(d);
+    const d = getFitD().find(x=>x.id===g.dataset.id); if(d) selectGarment(d);
   });
 
   // 刷新「当前选中服装」提示条

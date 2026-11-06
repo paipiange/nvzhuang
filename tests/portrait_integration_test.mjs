@@ -37,4 +37,31 @@ assert.ok(html.includes('data-db="portrait"'), '必须包含 portrait 图库切�
 assert.ok(html.includes('id="btnOpenPortraitModal"'), '必须包含试穿台模特选择按钮');
 assert.ok(html.includes('id="portraitModalOverlay"'), '必须包含模特选择弹窗浮层');
 
+// 4. 回归测试：模特入口应与上传/预览处于同一行，弹窗卡片不能被网格压扁
+assert.match(
+  html,
+  /<div class="step-photo-row">[\s\S]*?<div class="portrait-quick-row">[\s\S]*?id="btnOpenPortraitModal"[\s\S]*?<\/div>\s*<\/div>\s*<div class="step-compress-row">/,
+  '模特选择入口必须位于照片选择行内'
+);
+const portraitGridRule = html.match(/\.portrait-dialog-body\{[^}]*\}/)?.[0] || '';
+assert.ok(portraitGridRule.includes('align-content:start'), '模特弹窗网格必须从顶部排列');
+assert.ok(portraitGridRule.includes('grid-auto-rows:max-content'), '模特弹窗卡片必须保持自然高度');
+
+// 5. 回归测试：人脸图库状态不能污染试穿区的服装列表
+assert.match(
+  html,
+  /let fitDb = CURRENT_DB === 'anime' \? 'anime' : 'real';/,
+  '试穿区必须维护独立的服装图库状态'
+);
+assert.match(
+  html,
+  /function getFilteredGarments\(\)\{\s*return getFitD\(\)\.filter/,
+  '试穿服装列表必须从服装图库读取，不能读取人脸图库'
+);
+assert.match(
+  html,
+  /window\.openFitWithPerson = \(portraitId\) => \{[\s\S]*?setFitDatabase\('real'\);[\s\S]*?open\(\);/,
+  '从人脸进入试穿时必须默认切换到写实服装库'
+);
+
 console.log('✅ 所有 AI 模特图库本地化集成与页面完整性测试全部通过！');
