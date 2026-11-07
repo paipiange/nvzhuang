@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Design Tokens - 拍片哥女装 (衣装集 NVZHUANG)
+   ========================================================================== */
+
+:root,
+page {
+  /* 调色板 Palette */
+  --bg-page: #fcfbfa;
+  --primary: #cd7188;
+  --primary-hover: #b85e74;
+  --primary-soft: #f8e9ed;
+  --primary-badge: #f7ecee;
+  --text-main: #272225;
+  --text-secondary: #9a8e91;
+  --text-muted: #b3a2a3;
+  --surface-soft: #f4f1f0;
+  --surface-card: #ffffff;
+  --border: #eee7e7;
+  --border-light: #f6f3f2;
+
+  /* 辅助色彩 */
+  --accent-star: #cf8391;
+  --pill-dark: #373036;
+  --dot-pink: #fce9ed;
+  --dot-pink-text: #cc8291;
+  --dot-lav: #efebf7;
+  --dot-lav-text: #a591ca;
+  --dot-mocha: #f2e9e2;
+  --dot-mocha-text: #bc948a;
+
+  /* 圆角 */
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --radius-pill: 999px;
+  --radius-sm: 8px;
+
+  /* Wot UI 主题覆盖 */
+  --wot-color-theme: #cd7188;
+  --wot-button-primary-bg-color: #cd7188;
+  --wot-button-primary-border-color: #cd7188;
+  --wot-tabs-nav-line-bg-color: #cd7188;
+  --wot-tab-active-color: #cd7188;
+  --wot-switch-on-color: #cd7188;
+  --wot-radio-checked-color: #cd7188;
+  --wot-checkbox-checked-color: #cd7188;
+}
+
+page {
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Microsoft Yahei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 全局工具类 */
+.font-brand-serif {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.bg-page {
+  background-color: var(--bg-page);
+}
+
+.text-main {
+  color: var(--text-main);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-primary-color {
+  color: var(--primary);
+}
+
+.bg-primary-soft {
+  background-color: var(--primary-soft);
+}
+
+.border-subtle {
+  border-color: var(--border);
+}

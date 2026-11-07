@@ -1,0 +1,102 @@
+{
+  // 配置语言的文件关联
+  "files.associations": {
+    "pages.json": "jsonc", // pages.json 可以写注释
+    "manifest.json": "jsonc" // manifest.json 可以写注释
+  },
+
+  "stylelint.enable": false, // 禁用 stylelint
+  "css.validate": false, // 禁用 CSS 内置验证
+  "scss.validate": false, // 禁用 SCSS 内置验证
+  "less.validate": false, // 禁用 LESS 内置验证
+
+  // 新版本 VsCode 中这个配置已失效
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  // 配置新版本 VsCode 工作区的 TypeScript 的版本
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "README.md": "index.html,favicon.ico,robots.txt,CHANGELOG.md",
+    "docker.md": "Dockerfile,docker*.md,nginx*,.dockerignore",
+    "pages.config.ts": "manifest.config.ts,openapi-ts-request.config.ts",
+    "package.json": "tsconfig.json,pnpm-lock.yaml,pnpm-workspace.yaml,LICENSE,.gitattributes,.gitignore,.gitpod.yml,CNAME,.npmrc,.browserslistrc",
+    "eslint.config.mjs": ".commitlintrc.*,.prettier*,.editorconfig,.commitlint.cjs,.eslint*"
+  },
+
+  // Disable the default formatter, use eslint instead
+  "prettier.enable": false,
+  "editor.formatOnSave": false,
+
+  // Auto fix
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+
+  // Silent the stylistic rules in you IDE, but still auto fix them
+  "eslint.rules.customizations": [
+    { "rule": "style/*", "severity": "off", "fixable": true },
+    { "rule": "format/*", "severity": "off", "fixable": true },
+    { "rule": "*-indent", "severity": "off", "fixable": true },
+    { "rule": "*-spacing", "severity": "off", "fixable": true },
+    { "rule": "*-spaces", "severity": "off", "fixable": true },
+    { "rule": "*-order", "severity": "off", "fixable": true },
+    { "rule": "*-dangle", "severity": "off", "fixable": true },
+    { "rule": "*-newline", "severity": "off", "fixable": true },
+    { "rule": "*quotes", "severity": "off", "fixable": true },
+    { "rule": "*semi", "severity": "off", "fixable": true }
+  ],
+
+  // Enable eslint for all supported languages
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "html",
+    "markdown",
+    "json",
+    "jsonc",
+    "yaml",
+    "toml",
+    "xml",
+    "gql",
+    "graphql",
+    "astro",
+    "svelte",
+    "css",
+    "less",
+    "scss",
+    "pcss",
+    "postcss"
+  ],
+  "cSpell.words": [
+    "alova",
+    "Aplipay",
+    "attributify",
+    "chooseavatar",
+    "climblee",
+    "commitlint",
+    "dcloudio",
+    "iconfont",
+    "oxlint",
+    "qrcode",
+    "refresherrefresh",
+    "scrolltolower",
+    "tabbar",
+    "Toutiao",
+    "uniapp",
+    "unibest",
+    "unocss",
+    "uview",
+    "uvui",
+    "Wechat",
+    "WechatMiniprogram",
+    "Weixin"
+  ]
+}

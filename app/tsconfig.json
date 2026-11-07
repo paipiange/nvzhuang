@@ -1,0 +1,59 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ESNext",
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "baseUrl": ".",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@img/*": [
+        "./src/static/images/*"
+      ]
+    },
+    "resolveJsonModule": true,
+    "types": [
+      "@dcloudio/types",
+      "@uni-helper/uni-types",
+      "@uni-helper/vite-plugin-uni-pages/client",
+      "miniprogram-api-typings",
+      "z-paging/types",
+      "vitest/globals",
+      "./src/types/async-component.d.ts",
+      "./src/types/async-import.d.ts",
+      "./src/typings.d.ts"
+    ],
+    "allowJs": true,
+    "noImplicitThis": true,
+    "downlevelIteration": true,
+    "outDir": "dist",
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true
+  },
+  "vueCompilerOptions": {
+    "plugins": [
+      "@uni-helper/uni-types/volar-plugin"
+    ]
+  },
+  "include": [
+    "package.json",
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.jsx",
+    "src/**/*.vue",
+    "src/**/*.json"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

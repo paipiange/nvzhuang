@@ -10,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/os/gfile"
 
 	"backend/internal/controller/hello"
+	"backend/internal/controller/mobile"
 	"backend/internal/controller/tryon"
 	"backend/internal/imagevalidate"
 	"backend/internal/middleware"
@@ -81,6 +82,7 @@ var (
 					hello.NewV1(),
 					tryon.NewV1(),
 				)
+				mobile.New().RegisterRoutes(group)
 			})
 			s.Run()
 			return nil

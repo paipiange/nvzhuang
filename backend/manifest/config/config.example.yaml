@@ -196,12 +196,17 @@ security:
   apiKeysEnv: "TRYON_API_KEYS"      # 读取有效后端 Token 的环境变量名（多 Token 以英文逗号分隔，每个 32~512 字符）
   trustedOrigins:                   # CORS 严格白名单（精确匹配，禁止 *）
     - "https://paipiange.github.io"
+    - "https://servicewechat.com"
     - "http://localhost:3000"
     - "http://127.0.0.1:3000"
     - "http://localhost:8080"
     - "http://127.0.0.1:8080"
     - "http://localhost:5173"
     - "http://127.0.0.1:5173"
+    - "http://localhost:9000"
+    - "http://127.0.0.1:9000"
+    - "http://localhost:8000"
+    - "http://127.0.0.1:8000"
   allowPrivateNetwork: false        # 是否允许来自私有网络的 PNA 预检
   rateLimit:
     requestsPerMinute: 10           # 单调用方每分钟请求速率上限

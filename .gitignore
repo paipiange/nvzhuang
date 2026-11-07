@@ -23,5 +23,12 @@ config.yaml
 **/config/config.yaml
 *.log
 
+# 前端依赖与构建产物
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
 # 临时测试生成输出
 output/
+*.zip

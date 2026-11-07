@@ -1,0 +1,91 @@
+// 基础配置文件生成脚本
+// 此脚本用于生成 src/manifest.json 和 src/pages.json 基础文件
+// 由于这两个配置文件会被添加到 .gitignore 中，因此需要通过此脚本确保项目能正常运行
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { loadEnv } from 'vite'
+
+// 获取当前文件的目录路径（替代 CommonJS 中的 __dirname）
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const envDir = path.resolve(__dirname, '../env')
+const env = loadEnv('production', envDir)
+
+const VITE_APP_PUBLIC_BASE = env.VITE_APP_PUBLIC_BASE || '/'
+const VITE_APP_ROUTER_MODE = env.VITE_APP_ROUTER_MODE || 'hash'
+
+// 最简可运行配置
+// 注意（针对H5服务器自动部署场景）：
+// 1. pages 数组必须包含至少 2 个页面，否则 @dcloudio 会将 __UNI_FEATURE_PAGES__ 设为 false，
+//    导致 vue-router 和 initRouter 被 tree-shake 移除，运行时路由跳转报错：
+//    "Cannot read properties of undefined (reading 'push')"
+// 2. easycom 配置必须包含，否则相关组件库不会被打包
+// 3. globalStyle 配置必须包含，否则导航栏等样式异常
+// 4. h5.router.mode 需要同步设置为 history 或 hash，否则路由模式默认为 hash，可能导致部署后路由异常
+const manifest = {
+  h5: {
+    router: {
+      mode: VITE_APP_ROUTER_MODE,
+      base: VITE_APP_PUBLIC_BASE,
+    },
+  },
+}
+const pages = {
+  globalStyle: {
+    navigationStyle: 'default',
+    navigationBarTitleText: '拍片哥女装',
+    navigationBarBackgroundColor: '#f8f8f8',
+    navigationBarTextStyle: 'black',
+    backgroundColor: '#FFFFFF',
+  },
+  easycom: {
+    autoscan: true,
+    custom: {
+      '^fg-(.*)': '@/components/fg-$1/fg-$1.vue',
+      '^(?!z-paging-refresh|z-paging-load-more)z-paging(.*)':
+        'z-paging/components/z-paging$1/z-paging$1.vue',
+    },
+  },
+  pages: [
+    {
+      path: 'pages/index/index',
+      type: 'home',
+      style: {
+        navigationStyle: 'custom',
+        navigationBarTitleText: '首页',
+      },
+    },
+    {
+      path: 'pages/me/me',
+      type: 'page',
+      style: {
+        navigationBarTitleText: '我的',
+      },
+    },
+  ],
+  subPackages: [],
+}
+
+// 使用修复后的 __dirname 来解析文件路径
+const manifestPath = path.resolve(__dirname, '../src/manifest.json')
+const pagesPath = path.resolve(__dirname, '../src/pages.json')
+
+// 确保 src 目录存在
+const srcDir = path.resolve(__dirname, '../src')
+if (!fs.existsSync(srcDir)) {
+  fs.mkdirSync(srcDir, { recursive: true })
+}
+
+const MIN_SIZE = `{ }`.length // 如果只有一个空对象，必定是不对的，需要重新生成
+
+// 如果 src/manifest.json 不存在，就创建它；或者如果文件大小小于等于 MIN_SIZE，也重新创建
+if (!fs.existsSync(manifestPath) || fs.statSync(manifestPath).size <= MIN_SIZE) {
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+}
+
+// 如果 src/pages.json 不存在，就创建它；或者如果文件大小小于等于 MIN_SIZE，也重新创建
+if (!fs.existsSync(pagesPath) || fs.statSync(pagesPath).size <= MIN_SIZE) {
+  fs.writeFileSync(pagesPath, JSON.stringify(pages, null, 2))
+}
