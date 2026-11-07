@@ -26,6 +26,27 @@ const activeCategory = ref<GarmentCategory | 'all'>('all')
 const searchKeyword = ref('')
 const categoriesList = ref(CATEGORIES)
 
+const animeStyles = [
+  { name: '全部风格', keyword: '' },
+  { name: '洛丽塔 (蕾丝)', keyword: 'frill' },
+  { name: 'JK制服 (百褶)', keyword: 'skirt' },
+  { name: '机能风 (外套)', keyword: 'jacket' },
+  { name: '连衣裙 (长裙)', keyword: 'dress' },
+  { name: '针织毛衫', keyword: 'knit' },
+]
+
+function handleSelectAnimeStyle(kw: string) {
+  searchKeyword.value = kw
+  loadData(true)
+}
+
+function handleGoKnowledge() {
+  const category = library.value === 'anime' ? 'anime-guide' : 'tryon-tips'
+  uni.navigateTo({
+    url: `/pages/knowledge/index?category=${category}`,
+  })
+}
+
 const garments = ref<Garment[]>([])
 const page = ref(1)
 const pageSize = 20
@@ -119,11 +140,22 @@ onReachBottom(() => {
 })
 
 onShow(() => {
+  let needReload = false
   // 检查是否有优先图库偏好
   const pref = uni.getStorageSync('nvzhuang:gallery:preferred_lib')
   if (pref && (pref === 'real' || pref === 'anime') && pref !== library.value) {
     library.value = pref
     uni.removeStorageSync('nvzhuang:gallery:preferred_lib')
+    needReload = true
+  }
+  // 检查是否有预设搜索词
+  const prefQ = uni.getStorageSync('nvzhuang:gallery:preferred_q')
+  if (prefQ !== undefined && prefQ !== null && prefQ !== '') {
+    searchKeyword.value = prefQ
+    uni.removeStorageSync('nvzhuang:gallery:preferred_q')
+    needReload = true
+  }
+  if (needReload) {
     loadData(true)
   }
 })
@@ -194,13 +226,36 @@ onMounted(async () => {
         @select="handleSelectCategory"
       />
 
+      <!-- 二次元模式下的专属风格快捷过滤 -->
+      <view v-if="library === 'anime'" class="anime-filter-row">
+        <scroll-view scroll-x class="anime-chips-scroll" :show-scrollbar="false">
+          <view class="anime-chips-wrap">
+            <view
+              v-for="st in animeStyles"
+              :key="st.keyword"
+              class="anime-quick-pill"
+              :class="{ active: searchKeyword === st.keyword }"
+              @tap="handleSelectAnimeStyle(st.keyword)"
+            >
+              {{ st.name }}
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
       <!-- 图库数量与排序指示 -->
       <view class="library-stats">
         <view class="stats-count">
           <text class="stats-bold">{{ total }}</text> 套灵感服饰
         </view>
-        <view class="stats-sort">
-          {{ library === 'real' ? '写实专区' : '二次元专区' }} · 精选 ▾
+        <view class="stats-right-group">
+          <view class="kb-tip-btn" @tap="handleGoKnowledge">
+            <text class="kb-tip-icon">📖</text>
+            <text class="kb-tip-text">穿搭指南</text>
+          </view>
+          <view class="stats-sort">
+            {{ library === 'real' ? '写实专区' : '二次元专区' }} · 精选 ▾
+          </view>
         </view>
       </view>
 
@@ -322,6 +377,38 @@ onMounted(async () => {
   color: #292628;
 }
 
+.anime-filter-row {
+  margin-top: 14rpx;
+  margin-bottom: 8rpx;
+}
+
+.anime-chips-scroll {
+  white-space: nowrap;
+}
+
+.anime-chips-wrap {
+  display: inline-flex;
+  gap: 12rpx;
+  padding: 4rpx 0;
+}
+
+.anime-quick-pill {
+  padding: 8rpx 20rpx;
+  border-radius: 100rpx;
+  font-size: 20rpx;
+  background: #f1e9fa;
+  color: #7e22ce;
+  font-weight: 600;
+  border: 1px solid rgba(147, 51, 234, 0.15);
+  transition: all 0.2s ease;
+
+  &.active {
+    background: #9333ea;
+    color: #ffffff;
+    box-shadow: 0 4rpx 12rpx rgba(147, 51, 234, 0.3);
+  }
+}
+
 .library-stats {
   display: flex;
   justify-content: space-between;
@@ -329,6 +416,28 @@ onMounted(async () => {
   margin-bottom: 24rpx;
   font-size: 20rpx;
   color: #998f91;
+}
+
+.stats-right-group {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.kb-tip-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: rgba(205, 101, 123, 0.1);
+  color: #cd657b;
+  padding: 6rpx 14rpx;
+  border-radius: 100rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
+.kb-tip-icon {
+  font-size: 20rpx;
 }
 
 .stats-bold {

@@ -37,6 +37,21 @@ const garmentDisplayUrl = computed(() => {
   return tryonStore.draft.garmentImageUrl || null
 })
 
+const isAnimeGarment = computed(() => {
+  return tryonStore.draft.garmentId?.startsWith('anime:') || false
+})
+
+function handleGoKnowledge(category?: string) {
+  const url = category ? `/pages/knowledge/index?category=${encodeURIComponent(category)}` : '/pages/knowledge/index'
+  uni.navigateTo({ url })
+}
+
+function handleGoKnowledgeDetail(id: string) {
+  uni.navigateTo({
+    url: `/pages/knowledge/detail?id=${encodeURIComponent(id)}`,
+  })
+}
+
 const canGenerate = computed(() => {
   const hasPerson = Boolean(tryonStore.draft.personLocalPath || tryonStore.draft.selectedPortraitId)
   const hasGarment = Boolean(tryonStore.draft.garmentId)
@@ -175,8 +190,13 @@ onShow(async () => {
           </view>
           <text class="sub-title">你来挑衣服，剩下交给想象力。</text>
         </view>
-        <view class="round-icon-btn" @tap="handleGoSettings">
-          <view class="i-carbon-settings text-17px text-#382e32" />
+        <view class="head-action-group">
+          <view class="round-icon-btn mr-2" @tap="handleGoKnowledge('tryon-tips')">
+            <view class="i-carbon-book text-16px text-#382e32" />
+          </view>
+          <view class="round-icon-btn" @tap="handleGoSettings">
+            <view class="i-carbon-settings text-17px text-#382e32" />
+          </view>
         </view>
       </view>
 
@@ -214,10 +234,30 @@ onShow(async () => {
         />
       </view>
 
+      <!-- 二次元华服专属引导横幅 -->
+      <view v-if="isAnimeGarment" class="anime-guide-banner">
+        <view class="anime-guide-left">
+          <view class="anime-badge-row">
+            <text class="anime-badge">✦ 二次元动漫穿搭</text>
+            <text class="anime-sub-tag">插画级渲染</text>
+          </view>
+          <text class="anime-guide-text">已选中动漫服饰！推荐搭配火山豆包或ComfyUI模型，出图更具动漫插画质感。</text>
+        </view>
+        <view class="anime-guide-link" @tap="handleGoKnowledgeDetail('kb-anime-style-guide')">
+          <text>穿搭指南</text>
+          <view class="i-carbon-chevron-right text-12px" />
+        </view>
+      </view>
+
       <!-- 提示卡片 -->
       <view class="try-note">
         <view class="i-carbon-security mt-0.5 flex-shrink-0 text-13px text-#cc8c9b" />
-        <text>这里展示的是样图。正式上传和生成前，请确保拥有人像使用授权，并知晓换装可能通过第三方安全模型处理。</text>
+        <view class="try-note-body">
+          <text class="try-note-main">这里展示的是样图。正式上传和生成前，请确保拥有人像使用授权，并知晓换装可能通过第三方安全模型处理。</text>
+          <view class="try-kb-link" @tap="handleGoKnowledgeDetail('kb-tryon-secrets')">
+            <text>📖 查看《AI 虚拟换装高成功率秘籍》➔</text>
+          </view>
+        </view>
       </view>
 
       <!-- 模型选择栏 -->
@@ -345,6 +385,11 @@ onShow(async () => {
   color: #a89b99;
 }
 
+.head-action-group {
+  display: flex;
+  align-items: center;
+}
+
 .round-icon-btn {
   border: 1px solid #eae5e4;
   width: 66rpx;
@@ -403,17 +448,90 @@ onShow(async () => {
   flex: 0 0 auto;
 }
 
+.anime-guide-banner {
+  background: linear-gradient(135deg, #f6edf9 0%, #fdf2f7 100%);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.anime-guide-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.anime-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.anime-badge {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #9333ea;
+}
+
+.anime-sub-tag {
+  font-size: 18rpx;
+  color: #c026d3;
+  background: rgba(192, 38, 211, 0.1);
+  padding: 2rpx 8rpx;
+  border-radius: 4rpx;
+}
+
+.anime-guide-text {
+  font-size: 20rpx;
+  color: #6b21a8;
+  line-height: 1.45;
+}
+
+.anime-guide-link {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  color: #9333ea;
+  font-size: 22rpx;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .try-note {
   display: flex;
   align-items: flex-start;
-  gap: 10rpx;
+  gap: 12rpx;
   color: #a4999d;
   font-size: 18rpx;
   line-height: 1.5;
   background: #f8f5f4;
   border-radius: 20rpx;
-  padding: 18rpx;
-  margin: 26rpx 0 36rpx;
+  padding: 18rpx 22rpx;
+  margin: 22rpx 0 32rpx;
+}
+
+.try-note-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.try-note-main {
+  font-size: 18rpx;
+  color: #8b7f83;
+}
+
+.try-kb-link {
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #cd657b;
 }
 
 .section-title {

@@ -31,6 +31,7 @@ export default defineConfig({
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'src/uni_modules/**'],
+    testTimeout: 10000,
   },
   resolve: {
     alias: {

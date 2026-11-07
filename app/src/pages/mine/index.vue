@@ -55,6 +55,12 @@ function handleGoSettings() {
   })
 }
 
+function handleGoKnowledge() {
+  uni.navigateTo({
+    url: '/pages/knowledge/index',
+  })
+}
+
 function handleGoGallery() {
   uni.switchTab({
     url: '/pages/gallery/index',
@@ -172,6 +178,17 @@ onShow(() => {
           <view class="menu-text">
             <text class="menu-title">我的收藏</text>
             <text class="menu-sub">保存喜欢的服装灵感</text>
+          </view>
+          <view class="i-carbon-chevron-right text-14px text-#a9a0a2" />
+        </view>
+
+        <view class="menu-item" @tap="handleGoKnowledge">
+          <view class="menu-ico m-amber">
+            <view class="i-carbon-book text-17px" />
+          </view>
+          <view class="menu-text">
+            <text class="menu-title">穿搭与生图知识库</text>
+            <text class="menu-sub">二次元穿搭 / 提示词词典 / 换装秘籍</text>
           </view>
           <view class="i-carbon-chevron-right text-14px text-#a9a0a2" />
         </view>
@@ -477,6 +494,11 @@ onShow(() => {
 .m-caramel {
   color: #b08f7e;
   background: #f3ede7;
+}
+
+.m-amber {
+  color: #d97706;
+  background: #fef3c7;
 }
 
 .bottom-banner {
