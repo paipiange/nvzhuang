@@ -22,6 +22,20 @@
 
 ## 📸 预览
 
+### 📱 移动端与小程序界面预览
+
+| ① 发现首页（双图库与破壁橱窗） | ② 图库专区（1320套二次元服饰） | ③ AI 虚拟试衣间（模特配置） |
+| :---: | :---: | :---: |
+| <img src="docs/preview-1-home.png" width="260" alt="拍片哥女装 发现首页" /> | <img src="docs/preview-2-anime.png" width="260" alt="二次元动漫服饰图库" /> | <img src="docs/preview-3-tryon.png" width="260" alt="AI 虚拟试衣间" /> |
+| **精选推荐与双图库无缝切换**<br><sub>（二次元穿搭破壁橱窗、热门标签）</sub> | **1320套动漫服饰与风格筛选**<br><sub>（洛丽塔、JK制服、机能风一键过滤）</sub> | **真人/模特与二次元华服双向选择**<br><sub>（动漫插画级渲染专属引导横幅）</sub> |
+
+| ④ 穿搭与生图知识库 | ⑤ 中英提示词词典（一键复制） | ⑥ AI 模特库（1499位商用人像） |
+| :---: | :---: | :---: |
+| <img src="docs/preview-4-knowledge-index.png" width="260" alt="穿搭与生图知识库" /> | <img src="docs/preview-5-prompt-lexicon.png" width="260" alt="中英提示词词典" /> | <img src="docs/preview-6-models.png" width="260" alt="1499位AI模特库" /> |
+| **全方位穿搭与生图秘籍**<br><sub>（换装高成功率技巧、面料质感控制）</sub> | **图鉴级提示词与中英释义卡片**<br><sub>（轻触一键复制中英提示词至剪贴板）</sub> | **1499位免授权模特人像库**<br><sub>（支持短发/中发/长发发型多维挑选）</sub> |
+
+### 💻 网页端界面预览
+
 | 中文模式 | 英文模式 | 关键词搜索 |
 |---|---|---|
 | ![中文模式](docs/screenshot-zh.png) | ![英文模式](docs/screenshot-en.png) | ![关键词搜索](docs/screenshot-search.png) |
