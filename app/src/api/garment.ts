@@ -3,7 +3,15 @@ import { MOCK_GARMENTS } from '@/mock/data'
 import { http } from '@/http/http'
 import { useSettingsStore } from '@/store/settings'
 
-export async function getGarments(params: GarmentQuery): Promise<PageResult<Garment>> {
+export interface GetGarmentsOptions {
+  hideErrorToast?: boolean
+  onFallback?: (error: unknown) => void
+}
+
+export async function getGarments(
+  params: GarmentQuery,
+  options?: GetGarmentsOptions,
+): Promise<PageResult<Garment>> {
   const settings = useSettingsStore()
 
   if (settings.useMock) {
@@ -14,6 +22,7 @@ export async function getGarments(params: GarmentQuery): Promise<PageResult<Garm
     const res = await http<PageResult<Garment>>({
       url: '/api/v1/garments',
       method: 'GET',
+      hideErrorToast: options?.hideErrorToast,
       query: {
         library: params.library,
         category: params.category === 'all' ? undefined : params.category,
@@ -25,10 +34,12 @@ export async function getGarments(params: GarmentQuery): Promise<PageResult<Garm
     if (res && Array.isArray(res.list)) {
       return res
     }
+    options?.onFallback?.(new Error('Invalid garments response'))
     return filterMockGarments(params)
   }
   catch (e) {
     console.warn('API /garments failed, falling back to mock dataset', e)
+    options?.onFallback?.(e)
     return filterMockGarments(params)
   }
 }

@@ -1,11 +1,13 @@
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import type { Garment } from '@/types/garment'
 import { getGarmentById } from '@/api/garment'
 import { useFavoritesStore } from '@/store/favorites'
 import { useTryonStore } from '@/store/tryon'
 import { copyToClipboard, showToast } from '@/utils/platform'
+import type { PreviewImageItem } from '@/utils/imagePreview'
+import ImagePreviewModal from '@/components/ImagePreviewModal.vue'
 
 defineOptions({
   name: 'GarmentDetailPage',
@@ -20,12 +22,23 @@ definePage({
 
 const garment = ref<Garment | null>(null)
 const loading = ref(true)
+const previewVisible = ref(false)
 
 const favoritesStore = useFavoritesStore()
 const tryonStore = useTryonStore()
 
 const isFav = computed(() => {
   return garment.value ? favoritesStore.isFavorite(garment.value.id) : false
+})
+
+const previewItems = computed<PreviewImageItem[]>(() => {
+  if (!garment.value) {
+    return []
+  }
+  const url = garment.value.original_url || garment.value.image_url || garment.value.thumbnail_url
+  return url
+    ? [{ url, label: garment.value.title || garment.value.original_id }]
+    : []
 })
 
 function handleBack() {
@@ -63,13 +76,9 @@ function handleWearThis() {
 }
 
 function handlePreviewImage() {
-  if (!garment.value)
+  if (!previewItems.value.length)
     return
-  const url = garment.value.original_url || garment.value.image_url || garment.value.thumbnail_url
-  uni.previewImage({
-    urls: [url],
-    current: url,
-  })
+  previewVisible.value = true
 }
 
 onLoad(async (options: any) => {
@@ -162,6 +171,11 @@ onLoad(async (options: any) => {
         <text>穿上这件</text>
       </view>
     </view>
+
+    <ImagePreviewModal
+      v-model:visible="previewVisible"
+      :items="previewItems"
+    />
   </view>
 </template>
 

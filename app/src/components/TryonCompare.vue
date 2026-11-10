@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { computed, getCurrentInstance, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { saveImageToAlbum } from '@/utils/platform'
+import { computePreviewCardSize, getViewportSize } from '@/utils/imagePreview'
+import type { ImageDimensions, PreviewImageItem } from '@/utils/imagePreview'
+import ImagePreviewModal from '@/components/ImagePreviewModal.vue'
 
 const props = defineProps<{
   personUrl: string | null
@@ -8,22 +12,122 @@ const props = defineProps<{
   modelName?: string
 }>()
 
+const instance = getCurrentInstance()
+const viewport = ref(getViewportSize())
+const measuredWidth = ref<number | undefined>(undefined)
+const naturalSize = ref<ImageDimensions | undefined>(undefined)
+const previewVisible = ref(false)
+const previewIndex = ref(0)
+
+let resizeListenerBound = false
+
+const previewItems = computed<PreviewImageItem[]>(() => {
+  const list: PreviewImageItem[] = []
+  if (props.resultUrl) {
+    list.push({ url: props.resultUrl, label: '换装结果' })
+  }
+  if (props.personUrl) {
+    list.push({ url: props.personUrl, label: '原人像' })
+  }
+  if (props.garmentUrl) {
+    list.push({ url: props.garmentUrl, label: '原服装' })
+  }
+  return list
+})
+
+const cardSize = computed(() => {
+  return computePreviewCardSize({
+    viewportWidth: viewport.value.width,
+    viewportHeight: viewport.value.height,
+    containerWidth: measuredWidth.value,
+    imageWidth: naturalSize.value?.width,
+    imageHeight: naturalSize.value?.height,
+  })
+})
+
+const largeBoxStyle = computed(() => ({
+  height: `${cardSize.value.heightPx}px`,
+}))
+
+function measureContainerWidth() {
+  viewport.value = getViewportSize()
+  nextTick(() => {
+    try {
+      const query = instance?.proxy
+        ? uni.createSelectorQuery().in(instance.proxy)
+        : uni.createSelectorQuery()
+      query
+        .select('.result-large-box')
+        .boundingClientRect((rect) => {
+          const box = Array.isArray(rect) ? rect[0] : rect
+          if (box && typeof box.width === 'number' && box.width > 0) {
+            measuredWidth.value = box.width
+          }
+        })
+        .exec()
+    }
+    catch {
+      // 回退至 computePreviewCardSize 内置宽度估算
+    }
+  })
+}
+
+function handleMainImageLoad(e: { detail?: { width?: number | string, height?: number | string } }) {
+  const width = Number(e?.detail?.width)
+  const height = Number(e?.detail?.height)
+  if (width > 0 && height > 0) {
+    naturalSize.value = { width, height }
+  }
+  measureContainerWidth()
+}
+
 function handleSave() {
   saveImageToAlbum(props.resultUrl)
 }
 
-function handlePreview() {
-  uni.previewImage({
-    current: props.resultUrl,
-    urls: [props.resultUrl, props.personUrl, props.garmentUrl].filter(Boolean) as string[],
-  })
+function openPreviewByLabel(label: string) {
+  const idx = previewItems.value.findIndex(item => item.label === label)
+  previewIndex.value = idx >= 0 ? idx : 0
+  previewVisible.value = true
 }
+
+watch(
+  () => props.resultUrl,
+  () => {
+    naturalSize.value = undefined
+    measureContainerWidth()
+  },
+)
+
+onMounted(() => {
+  measureContainerWidth()
+  if (typeof uni.onWindowResize === 'function') {
+    uni.onWindowResize(measureContainerWidth)
+    resizeListenerBound = true
+  }
+})
+
+onUnmounted(() => {
+  if (resizeListenerBound && typeof uni.offWindowResize === 'function') {
+    uni.offWindowResize(measureContainerWidth)
+    resizeListenerBound = false
+  }
+})
 </script>
 
 <template>
   <view class="compare-card">
-    <view class="result-large-box" @tap="handlePreview">
-      <image :src="resultUrl" mode="aspectFill" class="result-main-img" />
+    <view class="result-large-box" :style="largeBoxStyle" @tap="openPreviewByLabel('换装结果')">
+      <image
+        :src="resultUrl"
+        mode="aspectFit"
+        class="result-main-img"
+        @load="handleMainImageLoad"
+      />
+      <view class="zoom-badge">
+        <view class="i-carbon-maximize text-11px text-white" />
+        <text>全屏预览</text>
+      </view>
       <view class="watermark-tag">
         ✦ AI 换装生成效果 · {{ modelName || '拍片哥女装' }}
       </view>
@@ -31,14 +135,14 @@ function handlePreview() {
 
     <!-- 底部小图对比 -->
     <view class="source-row">
-      <view v-if="personUrl" class="thumb-box">
+      <view v-if="personUrl" class="thumb-box" @tap="openPreviewByLabel('原人像')">
         <image :src="personUrl" mode="aspectFill" class="thumb-img" />
         <text class="thumb-label">原人像</text>
       </view>
       <view class="compare-plus">
         +
       </view>
-      <view v-if="garmentUrl" class="thumb-box">
+      <view v-if="garmentUrl" class="thumb-box" @tap="openPreviewByLabel('原服装')">
         <image :src="garmentUrl" mode="aspectFill" class="thumb-img" />
         <text class="thumb-label">原服装</text>
       </view>
@@ -50,6 +154,12 @@ function handlePreview() {
         <text class="save-label">保存到相册</text>
       </view>
     </view>
+
+    <ImagePreviewModal
+      v-model:visible="previewVisible"
+      :items="previewItems"
+      :initial-index="previewIndex"
+    />
   </view>
 </template>
 
@@ -64,17 +174,36 @@ function handlePreview() {
 
 .result-large-box {
   width: 100%;
-  height: 640rpx;
+  min-height: 180px;
   position: relative;
   background: #f7eff1;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: height 0.2s ease;
 }
 
 .result-main-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
+}
+
+.zoom-badge {
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  font-size: 18rpx;
+  color: #ffffff;
+  background: rgba(39, 34, 37, 0.56);
+  border-radius: 999rpx;
+  padding: 6rpx 14rpx;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  backdrop-filter: blur(4px);
 }
 
 .watermark-tag {
@@ -103,6 +232,11 @@ function handlePreview() {
   flex-direction: column;
   align-items: center;
   width: 110rpx;
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.85;
+  }
 }
 
 .thumb-img {

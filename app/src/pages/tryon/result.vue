@@ -144,6 +144,10 @@ onLoad(async (options: any) => {
   justify-content: space-between;
   padding: 16rpx 32rpx;
   height: 88rpx;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .nav-btn {
@@ -164,6 +168,10 @@ onLoad(async (options: any) => {
 
 .result-body {
   padding: 20rpx 32rpx 40rpx;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .result-meta {

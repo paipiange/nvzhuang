@@ -1,9 +1,12 @@
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import type { Garment, LibraryType } from '@/types/garment'
 import type { KnowledgeArticle } from '@/types/knowledge'
 import { getGarments } from '@/api/garment'
 import { getFeaturedKnowledgeArticles } from '@/data/knowledge'
+import { useSettingsStore } from '@/store/settings'
+import { getCurrentBaseUrl } from '@/utils'
 import GarmentCard from '@/components/GarmentCard.vue'
 
 defineOptions({
@@ -18,23 +21,115 @@ definePage({
   },
 })
 
+const settingsStore = useSettingsStore()
+
 const activeFeaturedTab = ref<LibraryType>('real')
 const featuredGarments = ref<Garment[]>([])
 const featuredArticles = ref<KnowledgeArticle[]>([])
 const loading = ref(false)
+const networkIssueVisible = ref(false)
 
-async function loadFeatured(lib: LibraryType = activeFeaturedTab.value) {
+const activeServerUrl = computed(() => {
+  return (settingsStore.serverBaseUrl?.trim() || getCurrentBaseUrl() || '').trim()
+})
+
+let hasMounted = false
+let requestVersion = 0
+let lastLoadedSignature = ''
+let lastPromptedSignature = ''
+let isConfigModalOpen = false
+
+function getConfigSignature() {
+  return `${settingsStore.useMock ? 'mock' : 'live'}:${activeServerUrl.value}`
+}
+
+function isLoopbackUrl(url: string): boolean {
+  return /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?(?:\/|$)/i.test(url)
+}
+
+function handleGoSettings() {
+  uni.navigateTo({
+    url: '/pages/mine/settings',
+  })
+}
+
+function promptBackendConfigModal(configSignature: string) {
+  if (isConfigModalOpen || lastPromptedSignature === configSignature) {
+    return
+  }
+
+  lastPromptedSignature = configSignature
+  isConfigModalOpen = true
+
+  const displayUrl = activeServerUrl.value || '未配置'
+  const reasonTip = isLoopbackUrl(displayUrl)
+    ? '当前后端地址指向本机回环地址 (127.0.0.1/localhost)，手机端或未启动本地服务时无法连接。'
+    : '当前无法连接到后端服务或返回数据异常，已暂用本地离线示例展示。'
+
+  uni.showModal({
+    title: '网络或后端配置异常',
+    content: `当前后端地址：${displayUrl}\n${reasonTip}请前往「个人设置」配置正确的后端 API 地址（或开启离线演示模式）。`,
+    confirmText: '去设置',
+    cancelText: '暂不设置',
+    success: (res) => {
+      isConfigModalOpen = false
+      if (res.confirm) {
+        handleGoSettings()
+      }
+    },
+    fail: () => {
+      isConfigModalOpen = false
+    },
+  })
+}
+
+async function loadFeatured(
+  lib: LibraryType = activeFeaturedTab.value,
+  options?: { forcePrompt?: boolean },
+) {
+  const currentVersion = ++requestVersion
+  const configSignature = getConfigSignature()
+  lastLoadedSignature = configSignature
   loading.value = true
+
+  let fellBack = false
+
   try {
-    const res = await getGarments({
-      library: lib,
-      page: 1,
-      page_size: 6,
-    })
+    const res = await getGarments(
+      {
+        library: lib,
+        page: 1,
+        page_size: 6,
+      },
+      {
+        hideErrorToast: true,
+        onFallback: () => {
+          fellBack = true
+        },
+      },
+    )
+
+    if (currentVersion !== requestVersion) {
+      return
+    }
+
     featuredGarments.value = res.list
+    networkIssueVisible.value = fellBack
+
+    if (fellBack) {
+      if (options?.forcePrompt) {
+        lastPromptedSignature = ''
+      }
+      promptBackendConfigModal(configSignature)
+    }
+    else {
+      lastPromptedSignature = ''
+    }
   }
   finally {
-    loading.value = false
+    if (currentVersion === requestVersion) {
+      loading.value = false
+    }
   }
 }
 
@@ -87,8 +182,19 @@ function handleGoKnowledgeDetail(article: KnowledgeArticle) {
 }
 
 onMounted(() => {
+  hasMounted = true
   loadFeatured('real')
   featuredArticles.value = getFeaturedKnowledgeArticles().slice(0, 3)
+})
+
+onShow(() => {
+  if (!hasMounted) {
+    return
+  }
+  const currentSignature = getConfigSignature()
+  if (currentSignature !== lastLoadedSignature || networkIssueVisible.value) {
+    loadFeatured(activeFeaturedTab.value)
+  }
 })
 </script>
 
@@ -114,6 +220,29 @@ onMounted(() => {
           </view>
           <view class="round-icon-btn" @tap="handleGoMine">
             <view class="i-carbon-user text-17px text-#382e32" />
+          </view>
+        </view>
+      </view>
+
+      <!-- 网络或后端配置异常提示横幅 -->
+      <view v-if="networkIssueVisible && !settingsStore.useMock" class="network-alert-banner">
+        <view class="network-alert-main">
+          <view class="network-alert-icon">
+            <view class="i-carbon-warning-alt text-16px text-#c94f65" />
+          </view>
+          <view class="network-alert-copy">
+            <text class="network-alert-title">后端服务暂未连接，当前展示离线示例</text>
+            <text class="network-alert-url">当前地址：{{ activeServerUrl || '未配置' }}</text>
+          </view>
+        </view>
+        <view class="network-alert-actions">
+          <view class="network-alert-btn secondary" @tap="loadFeatured(activeFeaturedTab, { forcePrompt: true })">
+            <view class="i-carbon-renew text-12px" />
+            <text>重试</text>
+          </view>
+          <view class="network-alert-btn primary" @tap="handleGoSettings">
+            <view class="i-carbon-settings text-12px" />
+            <text>去设置</text>
           </view>
         </view>
       </view>
@@ -426,6 +555,89 @@ onMounted(() => {
 
   &:active {
     transform: scale(0.95);
+  }
+}
+
+/* 网络配置异常提示横幅 */
+.network-alert-banner {
+  background: #fff5f6;
+  border: 1px solid #f4c7d0;
+  border-radius: 22rpx;
+  padding: 18rpx 20rpx;
+  margin-bottom: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  box-shadow: 0 4rpx 14rpx rgba(201, 79, 101, 0.08);
+}
+
+.network-alert-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+}
+
+.network-alert-icon {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 14rpx;
+  background: #fde8ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.network-alert-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.network-alert-title {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #8f2d43;
+  line-height: 1.35;
+}
+
+.network-alert-url {
+  font-size: 18rpx;
+  color: #9e6a76;
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.network-alert-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+
+.network-alert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  font-weight: 600;
+
+  &.secondary {
+    background: #ffffff;
+    color: #7d5b63;
+    border: 1px solid #e7cfd4;
+  }
+
+  &.primary {
+    background: #cd7188;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
   }
 }
 
