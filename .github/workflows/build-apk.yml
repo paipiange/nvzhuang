@@ -95,5 +95,12 @@ jobs:
         with:
           files: build_output/nvzhuang-release.apk
           name: Release ${{ github.ref_name }}
+          body: |
+            ## 📱 Android 离线安装包下载
+
+            - **GitHub 直接下载**：点击下方 Assets 中的 `nvzhuang-release.apk`
+            - **夸克网盘下载（国内备用）**：「拍片哥女装」链接：https://pan.quark.cn/s/a914f76fac0b
+
+            > 💡 **使用提示**：本安装包已内置全部前端页面与离线示例图集。如需使用真实 AI 换装功能，请在 App 内前往「我的 → 服务与模型设置」填写你的后端 API 地址；如仅体验图库浏览，可在设置中开启「离线演示模式」。
           draft: false
           prerelease: false

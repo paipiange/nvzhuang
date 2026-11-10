@@ -8,6 +8,7 @@
 
 > 🔗 **在线预览**：https://paipiange.github.io/nvzhuang/  
 > ⭐ **GitHub 源码**：https://github.com/paipiange/nvzhuang  
+> 📱 **Android APK 下载**：[GitHub Releases 直链](https://github.com/paipiange/nvzhuang/releases/latest/download/nvzhuang-release.apk)（[全部版本](https://github.com/paipiange/nvzhuang/releases)） | 也可[夸克网盘下载](https://pan.quark.cn/s/a914f76fac0b)（「拍片哥女装」`https://pan.quark.cn/s/a914f76fac0b`）  
 > 👤 **AI 模特脸部与造型图库**：集成自 [ai-portrait-gallery](https://ai-portrait-gallery.pages.dev/)（あぎ @agi_aibusi · CC0 1.0）  
 > 💃 **兄弟项目（AI 姿势参考与生图工坊）**：https://github.com/paipiange/ai-pose-gallery-zh  
 > 💡 **原作者推文 / 灵感来源**：X [@giaaibusi](https://x.com/giaaibusi)  
@@ -19,6 +20,18 @@
 - 👤 **内置 1499 位 AI 模特（全量本地化）**：完整集成 CC0 1.0 授权的 AI 模特脸部特写与造型图库，AI 试衣时可直接一键挑选心仪模特，彻底告别“想体验换装却找不到合适人像照片”的困扰。
 - ⚙️ **自选扩展（需自建后端 / 需自备 Key）**：真实 AI 试衣换装功能依赖 `backend/` 的 GoFrame 服务。需自行配置大模型（如 GPT Image 2、豆包 Seedream 或 Gemini）的 API Key 与 Base URL，调用将消耗对应的第三方模型配额。
 - 📜 **完全可商用 · 免费开源**：基于 [MIT License](LICENSE) 全量开源，代码与图集资源完全开放，支持自由商用创作、设计参考及二次开发。详见 [合规审计报告](docs/LINUXDO_RELEASE_AUDIT.md)。
+
+## 📱 Android 客户端下载
+
+提供离线封装版 Android APK（内置完整前端页面与离线示例图集，安装即可打开使用）：
+
+- **GitHub Releases 直接下载（推荐）**：
+  - 最新版 APK 直链：https://github.com/paipiange/nvzhuang/releases/latest/download/nvzhuang-release.apk
+  - 历史版本与说明：https://github.com/paipiange/nvzhuang/releases
+- **夸克网盘下载（国内备用）**：
+  - 「拍片哥女装」链接：https://pan.quark.cn/s/a914f76fac0b
+
+> 💡 **使用提示**：如需连接自建或局域网/公网 AI 换装后端，可在 App 内「我的 → 服务与模型设置」中填写后端 API 地址；若暂未部署后端，打开首页后会弹窗引导至设置页，可切换开启「离线演示模式」浏览内置图集。
 
 ## 📸 预览
 
