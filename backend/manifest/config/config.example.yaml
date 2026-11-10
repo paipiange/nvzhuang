@@ -197,6 +197,7 @@ security:
   trustedOrigins:                   # CORS 严格白名单（精确匹配，禁止 *）
     - "https://paipiange.github.io"
     - "https://servicewechat.com"
+    - "https://appassets.androidplatform.net"
     - "http://localhost:3000"
     - "http://127.0.0.1:3000"
     - "http://localhost:8080"

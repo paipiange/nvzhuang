@@ -23,6 +23,7 @@ export async function uploadImageFile(filePath: string): Promise<UploadResult> {
       name: 'file',
       header: {
         Accept: 'application/json',
+        'ngrok-skip-browser-warning': 'true',
       },
       success: (uploadRes) => {
         try {

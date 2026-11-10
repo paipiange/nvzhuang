@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -37,11 +38,25 @@ func (m *CORSMiddleware) isAllowedOrigin(origin string) bool {
 	if origin == "https://servicewechat.com" || strings.HasPrefix(origin, "https://servicewechat.com/") {
 		return true
 	}
-	// 允许本机回环 127.0.0.1 和 localhost 的所有端口访问
+	// 支持 Android 离线 WebView 来源
+	if origin == "https://appassets.androidplatform.net" || strings.HasPrefix(origin, "https://appassets.androidplatform.net/") {
+		return true
+	}
+	// 解析 URL
 	u, err := url.Parse(origin)
 	if err == nil {
-		hostname := u.Hostname()
-		if u.Scheme == "http" && (hostname == "127.0.0.1" || hostname == "localhost") {
+		hostname := strings.ToLower(u.Hostname())
+		// 允许本机回环 127.0.0.1 和 localhost 的所有端口访问
+		if hostname == "127.0.0.1" || hostname == "localhost" {
+			return true
+		}
+		// 允许局域网私有 IP 访问（当开启私有网络或本地调试模式时）
+		ip := net.ParseIP(hostname)
+		if ip != nil && (ip.IsLoopback() || ip.IsPrivate()) {
+			return true
+		}
+		// 允许通过 ngrok 穿透的域名来源
+		if strings.HasSuffix(hostname, ".ngrok-free.dev") || strings.HasSuffix(hostname, ".ngrok.app") || strings.HasSuffix(hostname, ".ngrok.io") {
 			return true
 		}
 	}
@@ -64,7 +79,7 @@ func (m *CORSMiddleware) Handler(r *ghttp.Request) {
 
 	r.Response.Header().Set("Access-Control-Allow-Origin", origin)
 	r.Response.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT, HEAD")
-	r.Response.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, Accept, Origin, X-Requested-With")
+	r.Response.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID, Accept, Origin, X-Requested-With, ngrok-skip-browser-warning")
 	r.Response.Header().Set("Access-Control-Expose-Headers", "X-Request-ID, Retry-After")
 
 	if m.allowPrivateNetwork && r.Header.Get("Access-Control-Request-Private-Network") == "true" {

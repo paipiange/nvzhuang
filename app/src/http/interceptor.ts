@@ -55,8 +55,9 @@ const httpInterceptor = {
     }
     // 1. 请求超时
     options.timeout = 60000 // 60s
-    // 2. （可选）添加小程序端请求头标识
+    // 2. （可选）添加小程序端请求头标识与 ngrok 穿透跳过警告头
     options.header = {
+      'ngrok-skip-browser-warning': 'true',
       ...options.header,
     }
     // 3. 添加 token 请求头标识
