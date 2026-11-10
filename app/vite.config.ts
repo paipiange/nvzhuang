@@ -174,7 +174,7 @@ export default defineConfig(({ command, mode }) => {
       }),
     ],
     define: {
-      __VITE_APP_PROXY__: VITE_APP_PROXY_ENABLE,
+      __VITE_APP_PROXY__: VITE_APP_PROXY_ENABLE || 'false',
     },
     css: {
       postcss: {
@@ -196,9 +196,9 @@ export default defineConfig(({ command, mode }) => {
     server: {
       host: '0.0.0.0',
       hmr: true,
-      port: Number.parseInt(VITE_APP_PORT, 10),
+      port: Number.parseInt(VITE_APP_PORT || '9000', 10),
       // 仅 H5 端生效，其他端不生效（其他端走build，不走devServer)
-      proxy: JSON.parse(VITE_APP_PROXY_ENABLE)
+      proxy: JSON.parse(VITE_APP_PROXY_ENABLE || 'false')
         ? {
             [VITE_APP_PROXY_PREFIX]: {
               target: VITE_SERVER_BASEURL,
