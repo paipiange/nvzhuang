@@ -100,6 +100,104 @@ func TestCORSOriginValidation(t *testing.T) {
 	}
 }
 
+func TestCORSGlobalPreflightAndUnmatchedRoutes(t *testing.T) {
+	cfg := &security.SecurityConfig{
+		TrustedOrigins: []string{
+			"http://localhost:3000",
+		},
+		AllowPrivateNetwork: true,
+	}
+	cors := NewCORSMiddleware(cfg)
+
+	s := g.Server("test-cors-global-unmatched")
+	s.Use(RequestID, cors.Handler)
+	s.Group("/", func(group *ghttp.RouterGroup) {
+		group.Middleware(ghttp.MiddlewareHandlerResponse)
+		group.GET("/api/v1/tryon/options", func(r *ghttp.Request) {
+			r.Response.WriteJson(g.Map{"code": 0, "message": "ok"})
+		})
+	})
+	s.SetPort(0)
+	_ = s.Start()
+	defer s.Shutdown()
+
+	port := strings.Split(s.GetListenedAddress(), ":")[1]
+	baseURL := "http://127.0.0.1:" + port
+	client := &http.Client{}
+
+	// 1. 未注册路由的 OPTIONS 预检（如 Android WebView + ngrok-skip-browser-warning）应返回 200 及 CORS 头
+	for _, path := range []string{"/", "/api/v1/options"} {
+		for _, origin := range []string{
+			"https://appassets.androidplatform.net",
+			"https://demo-tunnel.ngrok-free.dev",
+		} {
+			req, _ := http.NewRequest(http.MethodOptions, baseURL+path, nil)
+			req.Header.Set("Origin", origin)
+			req.Header.Set("Access-Control-Request-Method", "GET")
+			req.Header.Set("Access-Control-Request-Headers", "ngrok-skip-browser-warning")
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatalf("OPTIONS %s failed: %v", path, err)
+			}
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("expected 200 for OPTIONS %s (%s), got %d", path, origin, resp.StatusCode)
+			}
+			if resp.Header.Get("Access-Control-Allow-Origin") != origin {
+				t.Fatalf("expected Access-Control-Allow-Origin %s for %s, got %q", origin, path, resp.Header.Get("Access-Control-Allow-Origin"))
+			}
+			if !strings.Contains(resp.Header.Get("Access-Control-Allow-Headers"), "ngrok-skip-browser-warning") {
+				t.Fatalf("expected ngrok-skip-browser-warning in Access-Control-Allow-Headers, got %q", resp.Header.Get("Access-Control-Allow-Headers"))
+			}
+		}
+	}
+
+	// 2. 未注册路由的 GET 请求应返回 404 但携带 CORS 头，避免浏览器误判为网络/CORS错误
+	req404, _ := http.NewRequest(http.MethodGet, baseURL+"/api/v1/options", nil)
+	req404.Header.Set("Origin", "https://appassets.androidplatform.net")
+	resp404, err := client.Do(req404)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp404.Body.Close()
+	if resp404.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", resp404.StatusCode)
+	}
+	if resp404.Header.Get("Access-Control-Allow-Origin") != "https://appassets.androidplatform.net" {
+		t.Fatalf("expected Access-Control-Allow-Origin on 404 response, got %q", resp404.Header.Get("Access-Control-Allow-Origin"))
+	}
+
+	// 3. 未注册路由的非法 Origin 仍应拦截并返回 403
+	reqEvil, _ := http.NewRequest(http.MethodOptions, baseURL+"/api/v1/options", nil)
+	reqEvil.Header.Set("Origin", "http://evil.com")
+	respEvil, err := client.Do(reqEvil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	respEvil.Body.Close()
+	if respEvil.StatusCode != http.StatusForbidden {
+		t.Fatalf("expected 403 for evil origin, got %d", respEvil.StatusCode)
+	}
+
+	// 4. 已注册路由正常工作且包含 RequestID 与 CORS 头
+	reqOK, _ := http.NewRequest(http.MethodGet, baseURL+"/api/v1/tryon/options", nil)
+	reqOK.Header.Set("Origin", "https://appassets.androidplatform.net")
+	respOK, err := client.Do(reqOK)
+	if err != nil {
+		t.Fatal(err)
+	}
+	respOK.Body.Close()
+	if respOK.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", respOK.StatusCode)
+	}
+	if respOK.Header.Get("Access-Control-Allow-Origin") != "https://appassets.androidplatform.net" {
+		t.Fatalf("expected allow origin header on /api/v1/tryon/options")
+	}
+	if respOK.Header.Get("X-Request-ID") == "" {
+		t.Fatalf("expected X-Request-ID header")
+	}
+}
+
 func TestAuthMiddleware(t *testing.T) {
 	validToken := "valid-token-at-least-32-characters-long-123456"
 	envKey := "TEST_MIDDLEWARE_KEYS"

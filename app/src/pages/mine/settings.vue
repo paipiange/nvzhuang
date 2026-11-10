@@ -39,8 +39,42 @@ function handleBack() {
   })
 }
 
+function normalizeServerUrl(raw: string): string {
+  return raw
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/^https?:\/\//i, match => match.toLowerCase())
+}
+
+function isValidHttpUrl(url: string): boolean {
+  return /^https?:\/\/\S+$/i.test(url)
+}
+
+function isValidBackendOptionsResponse(raw: unknown): boolean {
+  let payload: unknown = raw
+  if (typeof payload === 'string') {
+    try {
+      payload = JSON.parse(payload)
+    }
+    catch {
+      return false
+    }
+  }
+  return typeof payload === 'object'
+    && payload !== null
+    && 'code' in payload
+    && (payload as { code?: unknown }).code === 0
+}
+
 function handleSave() {
-  const cleanUrl = serverUrl.value.trim().replace(/\/+$/, '')
+  const cleanUrl = normalizeServerUrl(serverUrl.value)
+  if (cleanUrl && !isValidHttpUrl(cleanUrl)) {
+    uni.showToast({
+      title: '服务地址需以 http:// 或 https:// 开头',
+      icon: 'none',
+    })
+    return
+  }
   serverUrl.value = cleanUrl
   settingsStore.serverBaseUrl = cleanUrl
   settingsStore.useMock = useMock.value
@@ -59,19 +93,46 @@ function handleSave() {
 }
 
 async function handleTestConnection() {
+  if (testLoading.value) {
+    return
+  }
+  const target = normalizeServerUrl(serverUrl.value)
+  if (!target) {
+    uni.showToast({
+      title: '请先输入服务地址',
+      icon: 'none',
+    })
+    return
+  }
+  if (!isValidHttpUrl(target)) {
+    uni.showToast({
+      title: '服务地址需以 http:// 或 https:// 开头',
+      icon: 'none',
+    })
+    return
+  }
+
+  serverUrl.value = target
   testLoading.value = true
-  const target = serverUrl.value.trim().replace(/\/+$/, '')
   try {
     const res = await uni.request({
-      url: `${target}/api/v1/options`,
+      url: `${target}/api/v1/tryon/options`,
       method: 'GET',
-      timeout: 5000,
+      timeout: 10000,
     })
     if (res.statusCode >= 200 && res.statusCode < 300) {
-      uni.showToast({
-        title: '连接成功',
-        icon: 'success',
-      })
+      if (isValidBackendOptionsResponse(res.data)) {
+        uni.showToast({
+          title: '连接成功',
+          icon: 'success',
+        })
+      }
+      else {
+        uni.showToast({
+          title: '响应异常，请确认后端地址',
+          icon: 'none',
+        })
+      }
     }
     else {
       uni.showToast({
@@ -80,7 +141,7 @@ async function handleTestConnection() {
       })
     }
   }
-  catch (e: any) {
+  catch {
     uni.showToast({
       title: '连接失败，请检查网络或后端状态',
       icon: 'none',

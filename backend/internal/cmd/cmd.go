@@ -69,11 +69,15 @@ var (
 			s := g.Server()
 			EnsureServerPort(ctx, s)
 
+			// 全局挂载 RequestID 与 CORS 中间件，确保未命中路由的 OPTIONS 预检与 404 响应也能返回 CORS 头
+			s.Use(
+				middleware.RequestID,
+				corsMw.Handler,
+			)
+
 			s.Group("/", func(group *ghttp.RouterGroup) {
 				group.Middleware(
-					middleware.RequestID,
 					ghttp.MiddlewareHandlerResponse,
-					corsMw.Handler,
 					bodyLimitMw.Handler,
 					authMw.Handler,
 					rateLimitMw.Handler,

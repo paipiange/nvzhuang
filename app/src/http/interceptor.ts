@@ -24,7 +24,7 @@ const httpInterceptor = {
       }
     }
     // 非 http 开头需拼接地址
-    if (!options.url.startsWith('http')) {
+    if (!/^https?:\/\//i.test(options.url)) {
       // 动态获取当前配置的 base url（优先用户在设置中自定义保存的地址，未设置则使用环境默认地址）
       let activeBaseUrl = ''
       try {
@@ -53,8 +53,8 @@ const httpInterceptor = {
       // #endif
       // TIPS: 如果需要对接多个后端服务，也可以在这里处理，拼接成所需要的地址
     }
-    // 1. 请求超时
-    options.timeout = 60000 // 60s
+    // 1. 请求超时（尊重调用方传入的超时时间，默认 60s）
+    options.timeout = options.timeout || 60000 // 60s
     // 2. （可选）添加小程序端请求头标识与 ngrok 穿透跳过警告头
     options.header = {
       'ngrok-skip-browser-warning': 'true',
