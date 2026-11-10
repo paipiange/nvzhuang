@@ -33,7 +33,8 @@ jobs:
       - name: Build Web Application Bundle
         working-directory: ./app
         run: |
-          pnpm install
+          pnpm config set registry https://registry.npmjs.org
+          pnpm install --registry=https://registry.npmjs.org
           pnpm build:h5
 
       - name: Bundle Web Assets into Android App
