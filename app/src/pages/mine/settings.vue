@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useSettingsStore } from '@/store/settings'
 import { useTryonStore } from '@/store/tryon'
+import { getEnvBaseUrl } from '@/utils'
 
 definePage({
   style: {
@@ -39,7 +40,9 @@ function handleBack() {
 }
 
 function handleSave() {
-  settingsStore.serverBaseUrl = serverUrl.value.trim()
+  const cleanUrl = serverUrl.value.trim().replace(/\/+$/, '')
+  serverUrl.value = cleanUrl
+  settingsStore.serverBaseUrl = cleanUrl
   settingsStore.useMock = useMock.value
   settingsStore.expertMode = expertMode.value
   settingsStore.clientConfig = {
@@ -157,21 +160,27 @@ function handleResetDefaults() {
           </text>
 
           <view class="input-group">
-            <text class="input-label">服务基础地址 (Base URL)</text>
+            <view class="flex items-center justify-between">
+              <text class="input-label">服务基础地址 (Base URL)</text>
+              <text class="text-11px text-#9e8e95">即时生效</text>
+            </view>
             <input
               v-model="serverUrl"
               class="text-input"
               type="text"
-              placeholder="http://127.0.0.1:8000"
+              placeholder="例如 https://api.yourdomain.com 或 http://192.168.1.100:8000"
             >
           </view>
 
           <view class="action-row">
+            <view class="preset-tag" @tap="serverUrl = getEnvBaseUrl()">
+              环境默认
+            </view>
             <view class="preset-tag" @tap="serverUrl = 'http://127.0.0.1:8000'">
-              本机 127.0.0.1:8000
+              本机 127.0.0.1
             </view>
             <view class="preset-tag" @tap="serverUrl = 'http://10.0.2.2:8000'">
-              Android模拟器 10.0.2.2
+              模拟器 10.0.2.2
             </view>
             <view class="btn-test" :class="{ disabled: testLoading }" @tap="handleTestConnection">
               {{ testLoading ? '测试中...' : '测试连接' }}

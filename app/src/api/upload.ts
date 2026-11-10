@@ -1,5 +1,6 @@
 import type { UploadResult } from '@/types/api'
 import { useSettingsStore } from '@/store/settings'
+import { getCurrentBaseUrl } from '@/utils'
 
 export async function uploadImageFile(filePath: string): Promise<UploadResult> {
   const settings = useSettingsStore()
@@ -13,9 +14,11 @@ export async function uploadImageFile(filePath: string): Promise<UploadResult> {
     }
   }
 
+  const activeBaseUrl = (settings.serverBaseUrl?.trim() || getCurrentBaseUrl()).replace(/\/+$/, '')
+
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: `${settings.serverBaseUrl}/api/v1/uploads`,
+      url: `${activeBaseUrl}/api/v1/uploads`,
       filePath,
       name: 'file',
       header: {

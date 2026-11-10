@@ -1,10 +1,8 @@
 import type { CustomRequestOptions } from '@/http/types'
+import { useSettingsStore } from '@/store/settings'
 import { useTokenStore } from '@/store'
-import { getEnvBaseUrl } from '@/utils'
+import { getCurrentBaseUrl } from '@/utils'
 import { stringifyQuery } from './tools/queryString'
-
-// 请求基准地址
-const baseUrl = getEnvBaseUrl()
 
 // 拦截器配置
 const httpInterceptor = {
@@ -27,18 +25,31 @@ const httpInterceptor = {
     }
     // 非 http 开头需拼接地址
     if (!options.url.startsWith('http')) {
+      // 动态获取当前配置的 base url（优先用户在设置中自定义保存的地址，未设置则使用环境默认地址）
+      let activeBaseUrl = ''
+      try {
+        const settingsStore = useSettingsStore()
+        activeBaseUrl = settingsStore.serverBaseUrl?.trim() || getCurrentBaseUrl()
+      }
+      catch {
+        activeBaseUrl = getCurrentBaseUrl()
+      }
+      activeBaseUrl = activeBaseUrl.replace(/\/+$/, '')
+
+      const cleanPath = options.url.startsWith('/') ? options.url : `/${options.url}`
+
       // #ifdef H5
       if (JSON.parse(import.meta.env.VITE_APP_PROXY_ENABLE)) {
         // 自动拼接代理前缀
-        options.url = import.meta.env.VITE_APP_PROXY_PREFIX + options.url
+        options.url = import.meta.env.VITE_APP_PROXY_PREFIX + cleanPath
       }
       else {
-        options.url = baseUrl + options.url
+        options.url = activeBaseUrl + cleanPath
       }
       // #endif
       // 非H5正常拼接
       // #ifndef H5
-      options.url = baseUrl + options.url
+      options.url = activeBaseUrl + cleanPath
       // #endif
       // TIPS: 如果需要对接多个后端服务，也可以在这里处理，拼接成所需要的地址
     }

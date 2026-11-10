@@ -1,0 +1,92 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Offline Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js & pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+          cache-dependency-path: 'app/pnpm-lock.yaml'
+
+      - name: Build Web Application Bundle
+        working-directory: ./app
+        run: |
+          pnpm install
+          pnpm build:h5
+
+      - name: Bundle Web Assets into Android App
+        run: |
+          mkdir -p android/app/src/main/assets/www
+          cp -r app/dist/build/h5/* android/app/src/main/assets/www/
+
+      - name: Setup Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Signing Keystore
+        working-directory: ./android/app
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
+          elif [ ! -f release.jks ]; then
+            keytool -genkeypair -v -keystore release.jks -alias paipiange -keyalg RSA -keysize 2048 -validity 10000 -storepass "nvzhuang123456" -keypass "nvzhuang123456" -dname "CN=paipiange, OU=nvzhuang, O=paipiange, L=Beijing, ST=Beijing, C=CN"
+          fi
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build Release APK
+        working-directory: ./android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'nvzhuang123456' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'paipiange' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'nvzhuang123456' }}
+        run: |
+          gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK for Distribution
+        run: |
+          mkdir -p build_output
+          cp android/app/build/outputs/apk/release/*.apk build_output/nvzhuang-release.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvzhuang-release.apk
+          path: build_output/nvzhuang-release.apk
+
+      - name: Publish to GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build_output/nvzhuang-release.apk
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false

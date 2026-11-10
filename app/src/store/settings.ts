@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { getCurrentBaseUrl, getEnvBaseUrl } from '@/utils'
 
 const SETTINGS_KEY = 'nvzhuang:settings:v1'
 
@@ -11,7 +12,7 @@ export interface ClientModelConfig {
 }
 
 export const useSettingsStore = defineStore('settings', () => {
-  const serverBaseUrl = ref<string>('http://127.0.0.1:8000')
+  const serverBaseUrl = ref<string>(getCurrentBaseUrl())
   const useMock = ref<boolean>(false)
   const expertMode = ref<boolean>(false)
   const clientConfig = ref<ClientModelConfig>({
@@ -25,8 +26,8 @@ export const useSettingsStore = defineStore('settings', () => {
     try {
       const stored = uni.getStorageSync(SETTINGS_KEY)
       if (stored && typeof stored === 'object') {
-        if (stored.serverBaseUrl)
-          serverBaseUrl.value = stored.serverBaseUrl
+        if (stored.serverBaseUrl && typeof stored.serverBaseUrl === 'string' && stored.serverBaseUrl.trim())
+          serverBaseUrl.value = stored.serverBaseUrl.trim().replace(/\/+$/, '')
         if (typeof stored.useMock === 'boolean')
           useMock.value = stored.useMock
         if (typeof stored.expertMode === 'boolean')
@@ -42,8 +43,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const saveSettings = () => {
     try {
+      const cleanUrl = serverBaseUrl.value.trim().replace(/\/+$/, '')
+      serverBaseUrl.value = cleanUrl
       uni.setStorageSync(SETTINGS_KEY, {
-        serverBaseUrl: serverBaseUrl.value,
+        serverBaseUrl: cleanUrl,
         useMock: useMock.value,
         expertMode: expertMode.value,
         clientConfig: clientConfig.value,
@@ -55,7 +58,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   const resetSettings = () => {
-    serverBaseUrl.value = 'http://127.0.0.1:8000'
+    serverBaseUrl.value = getEnvBaseUrl()
     useMock.value = false
     expertMode.value = false
     clientConfig.value = {

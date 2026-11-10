@@ -116,27 +116,58 @@ export function getCurrentPageI18nKey() {
 }
 
 /**
- * 根据微信小程序当前环境，判断应该获取的 baseUrl
+ * 根据平台与环境，判断应该获取的默认 baseUrl
  */
 export function getEnvBaseUrl() {
-  // 默认请求地址。微信小程序如果没有配置专用地址，也会回退到这个地址。
-  let baseUrl = import.meta.env.VITE_SERVER_BASEURL
+  // 默认请求地址。微信小程序或 App 如果没有配置专用地址，也会回退到这个地址。
+  let baseUrl = import.meta.env.VITE_SERVER_BASEURL || 'http://127.0.0.1:8000'
+
+  // #ifdef APP-PLUS
+  if (import.meta.env.VITE_SERVER_BASEURL__APP) {
+    baseUrl = import.meta.env.VITE_SERVER_BASEURL__APP
+  }
+  // #endif
 
   // 微信小程序端环境区分
   if (isMpWeixin) {
-    const {
-      miniProgram: { envVersion },
-    } = uni.getAccountInfoSync()
-    const weixinBaseUrlMap: Record<string, string | undefined> = {
-      develop: import.meta.env.VITE_SERVER_BASEURL__WEIXIN_DEVELOP,
-      trial: import.meta.env.VITE_SERVER_BASEURL__WEIXIN_TRIAL,
-      release: import.meta.env.VITE_SERVER_BASEURL__WEIXIN_RELEASE,
+    try {
+      const accountInfo = uni.getAccountInfoSync?.()
+      const envVersion = accountInfo?.miniProgram?.envVersion
+      if (envVersion) {
+        const weixinBaseUrlMap: Record<string, string | undefined> = {
+          develop: import.meta.env.VITE_SERVER_BASEURL__WEIXIN_DEVELOP,
+          trial: import.meta.env.VITE_SERVER_BASEURL__WEIXIN_TRIAL,
+          release: import.meta.env.VITE_SERVER_BASEURL__WEIXIN_RELEASE,
+        }
+        baseUrl = weixinBaseUrlMap[envVersion] || baseUrl
+      }
     }
-
-    baseUrl = weixinBaseUrlMap[envVersion] || baseUrl
+    catch (e) {
+      console.warn('getAccountInfoSync failed', e)
+    }
   }
 
-  return baseUrl
+  return (baseUrl || '').replace(/\/+$/, '')
+}
+
+/**
+ * 获取当前生效的接口基准地址（支持动态配置）
+ * 优先级：用户在界面设置中保存的自定义地址 > 平台环境专属地址 > 环境变量默认地址
+ */
+export function getCurrentBaseUrl(): string {
+  try {
+    const stored = uni.getStorageSync('nvzhuang:settings:v1')
+    if (stored && typeof stored === 'object') {
+      const customUrl = (stored as Record<string, any>).serverBaseUrl
+      if (typeof customUrl === 'string' && customUrl.trim()) {
+        return customUrl.trim().replace(/\/+$/, '')
+      }
+    }
+  }
+  catch {
+    // 忽略读取存储异常
+  }
+  return getEnvBaseUrl()
 }
 
 /**
