@@ -20,21 +20,28 @@ type TokenStore struct {
 }
 
 func NewTokenStore(authRequired bool, envKey string) (*TokenStore, error) {
+	return NewTokenStoreWithConfig(authRequired, envKey, nil)
+}
+
+func NewTokenStoreWithConfig(authRequired bool, envKey string, configuredTokens []string) (*TokenStore, error) {
 	if envKey == "" {
 		envKey = "TRYON_API_KEYS"
 	}
 	rawEnv := os.Getenv(envKey)
 	var tokens []TokenEntry
-
+	parts := configuredTokens
 	if strings.TrimSpace(rawEnv) != "" {
-		parts := strings.Split(rawEnv, ",")
+		parts = strings.Split(rawEnv, ",")
+	}
+
+	if len(parts) > 0 {
 		for _, part := range parts {
 			token := strings.TrimSpace(part)
 			if token == "" {
 				continue
 			}
 			if len(token) < 32 || len(token) > 512 {
-				return nil, fmt.Errorf("环境变量 %s 中的 Token 长度无效（必须为 32 到 512 个字符）", envKey)
+				return nil, fmt.Errorf("后端访问 Token 长度无效（必须为 32 到 512 个字符）")
 			}
 			sum := sha256.Sum256([]byte(token))
 			principalID := hex.EncodeToString(sum[:8]) // 前 16 个十六进制字符
@@ -46,7 +53,7 @@ func NewTokenStore(authRequired bool, envKey string) (*TokenStore, error) {
 	}
 
 	if authRequired && len(tokens) == 0 {
-		return nil, fmt.Errorf("security.authRequired 为 true，但未在环境变量 %s 中找到有效后端访问 Token（每个 Token 需 32~512 字符）", envKey)
+		return nil, fmt.Errorf("security.authRequired 为 true，但未在 .env 或 config.yaml 中找到有效后端访问 Token（每个 Token 需 32~512 字符）")
 	}
 
 	return &TokenStore{

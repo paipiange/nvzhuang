@@ -1,6 +1,10 @@
 package com.paipiange.nvzhuang;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.webkit.PermissionRequest;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,9 +20,12 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +37,37 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
+    private PermissionRequest microphoneRequest;
+    private NativeDuplexAudioBridge nativeAudioBridge;
+    private String nativeAudioPermissionSessionId;
+
+    private final ActivityResultLauncher<String> microphonePermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                PermissionRequest request = microphoneRequest;
+                microphoneRequest = null;
+                if (request == null) return;
+                if (granted && isLocalPage()) {
+                    request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                } else {
+                    request.deny();
+                }
+            });
+
+    private final ActivityResultLauncher<String> nativeAudioPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                String sessionId = nativeAudioPermissionSessionId;
+                nativeAudioPermissionSessionId = null;
+                NativeDuplexAudioBridge bridge = nativeAudioBridge;
+                if (sessionId != null && bridge != null) {
+                    bridge.onMicrophonePermissionResult(sessionId, granted && isLocalPage());
+                }
+            });
+
+    private static boolean isLocalOrigin(Uri uri) {
+        return uri != null && "https".equalsIgnoreCase(uri.getScheme())
+                && LOCAL_HOST.equalsIgnoreCase(uri.getHost())
+                && (uri.getPort() == -1 || uri.getPort() == 443);
+    }
 
     private final ActivityResultLauncher<String> filePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetMultipleContents(), uris -> {
@@ -43,6 +81,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+    private boolean isLocalPage() {
+        String url = webView.getUrl();
+        return url != null && isLocalOrigin(Uri.parse(url));
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +93,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         webView = findViewById(R.id.webview);
+        WebView.setWebContentsDebuggingEnabled(
+                (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -63,7 +108,53 @@ public class MainActivity extends AppCompatActivity {
         settings.setLoadWithOverviewMode(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
+        nativeAudioBridge = new NativeDuplexAudioBridge(this, webView,
+                new NativeDuplexAudioBridge.PermissionDelegate() {
+                    @Override
+                    public void request(String sessionId) {
+                        if (!isLocalPage()) {
+                            nativeAudioBridge.onMicrophonePermissionResult(sessionId, false);
+                            return;
+                        }
+                        nativeAudioPermissionSessionId = sessionId;
+                        nativeAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO);
+                    }
+
+                    @Override
+                    public void cancel(String sessionId) {
+                        if (sessionId.equals(nativeAudioPermissionSessionId)) {
+                            nativeAudioPermissionSessionId = null;
+                        }
+                    }
+                });
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            WebViewCompat.addWebMessageListener(
+                    webView,
+                    "CompanionAudioNative",
+                    Collections.singleton("https://" + LOCAL_HOST),
+                    (view, message, sourceOrigin, isMainFrame, replyProxy) -> {
+                        NativeDuplexAudioBridge bridge = nativeAudioBridge;
+                        if (bridge != null) {
+                            bridge.onMessage(message.getData(), sourceOrigin, isMainFrame, replyProxy);
+                        }
+                    });
+        } else {
+            Log.w(TAG, "Native duplex audio requires WebView WEB_MESSAGE_LISTENER support");
+        }
+
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return request.isForMainFrame() && !isLocalOrigin(request.getUrl());
+            }
+
+            @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                NativeDuplexAudioBridge bridge = nativeAudioBridge;
+                if (bridge != null) bridge.resetForNavigation();
+                super.onPageStarted(view, url, favicon);
+            }
+
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
@@ -83,6 +174,32 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(PermissionRequest request) {
+                if (!isLocalOrigin(request.getOrigin()) || !isLocalPage()) {
+                    request.deny();
+                    return;
+                }
+                boolean wantsAudio = false;
+                for (String resource : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) wantsAudio = true;
+                }
+                if (!wantsAudio) {
+                    request.deny();
+                } else if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                    request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+                } else {
+                    if (microphoneRequest != null) microphoneRequest.deny();
+                    microphoneRequest = request;
+                    microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO);
+                }
+            }
+
+            @Override
+            public void onPermissionRequestCanceled(PermissionRequest request) {
+                if (microphoneRequest == request) microphoneRequest = null;
+            }
+
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
                                              FileChooserParams fileChooserParams) {
@@ -115,6 +232,39 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    @Override
+    protected void onStop() {
+        NativeDuplexAudioBridge bridge = nativeAudioBridge;
+        if (bridge != null) bridge.resetForNavigation();
+        webView.onPause();
+        super.onStop();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        webView.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (microphoneRequest != null) {
+            microphoneRequest.deny();
+            microphoneRequest = null;
+        }
+        if (filePathCallback != null) {
+            filePathCallback.onReceiveValue(null);
+            filePathCallback = null;
+        }
+        nativeAudioPermissionSessionId = null;
+        if (nativeAudioBridge != null) {
+            nativeAudioBridge.dispose();
+            nativeAudioBridge = null;
+        }
+        webView.destroy();
+        super.onDestroy();
     }
 
     /**

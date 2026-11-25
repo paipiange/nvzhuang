@@ -112,8 +112,11 @@
     "type-check": "vue-tsc --noEmit",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "lint:ci": "eslint src e2e scripts manifest.config.ts openapi-ts-request.config.ts pages.config.ts playwright.config.ts uno.config.ts vite.config.ts vitest.config.ts eslint.config.mjs",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@alova/adapter-uniapp": "^2.0.14",
@@ -157,6 +160,7 @@
     "@dcloudio/vite-plugin-uni": "3.0.0-5020620260917001",
     "@iconify-json/carbon": "^1.2.4",
     "@iconify/utils": "^3.0.2",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^20.17.9",
     "@uni-helper/eslint-config": "0.5.0",
     "@uni-helper/plugin-uni": "0.1.0",

@@ -17,8 +17,12 @@ type TryonReq struct {
 	KeepFace bool `json:"keep_face" d:"true" dc:"是否保持人物面部一致"`
 	// 语言：zh / en
 	Lang string `json:"lang" d:"zh" dc:"提示词语言"`
+	// 未指定时保留普通换装流程；指定时仅接受固定的写真姿势 ID。
+	PoseID *string `json:"pose_id,omitempty" dc:"写真姿势：natural / wave / heart / peace / sitting / profile"`
 	// 浏览器端自定义模型配置。仅用于当前请求，后端不得持久化或记录其中的 Key/Base URL。
 	ClientConfig *ClientModelConfig `json:"client_config,omitempty" dc:"当前请求临时使用的用户模型配置"`
+	// 云端模型可能产生费用；客户端必须对每次云端生成显式确认。本地 ComfyUI 不要求。
+	CostAcknowledged bool `json:"cost_acknowledged" dc:"已确认本次云端生成可能消耗模型额度"`
 }
 
 // ClientModelConfig 用户在浏览器设置中心保存的模型配置。
@@ -50,4 +54,23 @@ type ComfyUIHealthRes struct {
 	Available bool   `json:"available"`
 	Model     string `json:"model,omitempty"`
 	Message   string `json:"message"`
+}
+
+type ProviderHealthReq struct {
+	g.Meta `path:"/providers/health" method:"get" tags:"换装" summary:"无生成检查图片模型配置与连通性"`
+}
+
+type ProviderHealthItem struct {
+	Alias      string `json:"alias"`
+	Provider   string `json:"provider"`
+	Model      string `json:"model,omitempty"`
+	Local      bool   `json:"local"`
+	Configured bool   `json:"configured"`
+	Reachable  bool   `json:"reachable"`
+	Message    string `json:"message"`
+}
+
+type ProviderHealthRes struct {
+	GenerationRequestMade bool                 `json:"generation_request_made"`
+	Providers             []ProviderHealthItem `json:"providers"`
 }

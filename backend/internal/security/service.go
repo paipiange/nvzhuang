@@ -13,6 +13,7 @@ type Service struct {
 	RateLimiter        *RateLimiter
 	DailyQuotaTracker  *DailyQuotaTracker
 	ConcurrencyManager *ConcurrencyManager
+	CloudBudgetTracker *CloudBudgetTracker
 }
 
 var defaultService *Service
@@ -23,7 +24,7 @@ func InitService(ctx context.Context) (*Service, error) {
 		return nil, fmt.Errorf("加载安全配置失败: %w", err)
 	}
 
-	tokenStore, err := NewTokenStore(cfg.AuthRequired, cfg.APIKeysEnv)
+	tokenStore, err := NewTokenStoreWithConfig(cfg.AuthRequired, cfg.APIKeysEnv, cfg.APIKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +39,7 @@ func InitService(ctx context.Context) (*Service, error) {
 		RateLimiter:        NewRateLimiter(cfg.RateLimit.RequestsPerMinute, cfg.RateLimit.Burst, cfg.RateLimit.LimiterIdleMinutes),
 		DailyQuotaTracker:  NewDailyQuotaTracker(cfg.RateLimit.DailyRequestsPerPrincipal),
 		ConcurrencyManager: NewConcurrencyManager(cfg.Concurrency.Global, cfg.Concurrency.PerPrincipal),
+		CloudBudgetTracker: NewCloudBudgetTracker(cfg.CostGuard.DailyCloudGlobal, cfg.CostGuard.DailyCloudPerPrincipal),
 	}
 	defaultService = s
 	return s, nil
@@ -53,6 +55,7 @@ func GetService() *Service {
 			RateLimiter:        NewRateLimiter(cfg.RateLimit.RequestsPerMinute, cfg.RateLimit.Burst, cfg.RateLimit.LimiterIdleMinutes),
 			DailyQuotaTracker:  NewDailyQuotaTracker(cfg.RateLimit.DailyRequestsPerPrincipal),
 			ConcurrencyManager: NewConcurrencyManager(cfg.Concurrency.Global, cfg.Concurrency.PerPrincipal),
+			CloudBudgetTracker: NewCloudBudgetTracker(cfg.CostGuard.DailyCloudGlobal, cfg.CostGuard.DailyCloudPerPrincipal),
 		}
 	}
 	return defaultService

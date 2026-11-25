@@ -33,7 +33,7 @@ docker compose up -d
 docker compose logs -f
 ```
 
-> 说明：系统默认自动加载配置模板并绑定 `:8000` 端口。若需深度定制模型或路由，可复制配置：`cp manifest/config/config.example.yaml manifest/config/config.yaml`。
+> 说明：系统会自动加载 `backend/.env`；所有 `config.yaml` 叶子配置也可通过对应的 `NVZHUANG_` 环境变量覆盖。未创建 `config.yaml` 时自动回退模板并绑定 `:8000`。
 
 ### 方式 B：Docker Run 单命令运行
 
@@ -70,6 +70,18 @@ export GEMINI_API_KEY="AIza你的key"
 > 服务默认监听 `:8000`。可用环境变量 `GF_GCFG_FILE` 指定配置文件路径，或用 `--gf.gcfg.file` 参数。
 
 ## 二点五、模型与 Key 配置说明
+
+后端配置统一支持 `.env` 和 `manifest/config/config.yaml`。优先级为：操作系统/容器变量 > `.env` > `config.yaml` > 模板/默认值。通用环境变量命名规则是配置路径转大写下划线并增加 `NVZHUANG_` 前缀，例如：
+
+```dotenv
+NVZHUANG_SERVER_ADDRESS=:8000
+NVZHUANG_LLM_MODELS_DOUBAO_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+NVZHUANG_LLM_MODELS_DOUBAO_MODEL=doubao-seedream-3-0-t2i-250415
+NVZHUANG_SECURITY_RATE_LIMIT_REQUESTS_PER_MINUTE=10
+NVZHUANG_VOICE_FFMPEG=ffmpeg
+```
+
+数组可使用英文逗号分隔或 JSON 数组。新增自定义模型时，应先在 `config.yaml` 增加模型条目，再用同路径的 `NVZHUANG_` 变量覆盖字段。
 
 所有模型的 **API Key、Base URL、模型名** 都在 `manifest/config/config.yaml` 的 `llm.models` 下配置，均可自由修改：
 
@@ -160,7 +172,7 @@ server {
 
 ### 1. 访问凭证鉴权（Bearer Token）
 - **开启鉴权**：在 `manifest/config/config.yaml` 中配置 `security.authRequired: true`（本地调试可临时设为 `false`，公开部署必须为 `true`）。
-- **配置密钥**：在环境变量或 `.env` 文件中设置 `TRYON_API_KEYS`（多个 Token 用英文逗号分隔，每个 Token 须为 32 到 512 个字符）。
+- **配置密钥**：可在环境变量或 `.env` 中设置 `TRYON_API_KEYS`，也可在被 Git 忽略的 `config.yaml` 中填写 `security.apiKeys`。环境变量存在时会完整覆盖 YAML Token 列表。每个 Token 须为 32 到 512 个字符。
   ```bash
   TRYON_API_KEYS="your-secure-token-with-at-least-32-chars-long-1234,another-client-token-5678"
   ```
@@ -186,7 +198,7 @@ server {
 - **前端自动压缩**：前端在上传与发送前自动进行阶梯压缩，最长边自适应缩小到 2048 px 内，优先采用 WebP（质量 0.90），降级 JPEG（0.90~0.75），确保绝大多数手机实拍照片无感顺畅上传。
 
 ### 5. API Key 隔离与保护
-- Key 仅保存在服务器本地环境变量或 `.env`，禁止将包含真实 Key 的 `config.yaml` 或 `.env` 提交到公开仓库。
+- Key 仅保存在服务器本地环境变量、`.env` 或被 Git 忽略的 `config.yaml`，禁止将包含真实 Key 的配置提交到公开仓库。
 - 默认的「服务器预设」模式下，前端不接触服务器 API Key，所有大模型通信均由后端代理中转。
 - 可选的「个人模型配置」由用户主动保存在自己的浏览器，并只随单次 `/tryon` 请求发送。后端不写数据库、配置文件或业务日志；Gemini Key 使用请求头传递，不进入上游 URL。
 - 个人 Base URL 默认拒绝 localhost、内网与保留地址，且不允许查询参数，避免公开后端被滥用为 SSRF 代理或把 Key 写入 URL。

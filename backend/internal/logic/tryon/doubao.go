@@ -73,8 +73,8 @@ func (d *Doubao) Generate(ctx context.Context, personB64, garmentB64, prompt, si
 		Model:  d.model,
 		Prompt: prompt,
 		Image: []string{
-			"data:image/png;base64," + ensureBase64(personB64),
-			"data:image/png;base64," + ensureBase64(garmentB64),
+			providerReferenceURL(personB64),
+			providerReferenceURL(garmentB64),
 		},
 		Size:           normalizeDoubaoSize(size),
 		ResponseFormat: "url",

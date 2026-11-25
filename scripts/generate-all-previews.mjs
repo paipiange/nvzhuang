@@ -1,10 +1,30 @@
 import http from 'node:http'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
 import { spawn } from 'node:child_process'
 
-const CHROME_PATH = 'C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'
-const TEMP_DIR = 'C:\\Users\\Administrator\\AppData\\Local\\Temp\\chrome-shot-all'
+function resolveChromePath() {
+  if (process.env.CHROME_PATH) {
+    return process.env.CHROME_PATH
+  }
+
+  if (process.platform !== 'win32') {
+    return 'google-chrome'
+  }
+
+  const candidates = [
+    process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+    process.env.PROGRAMFILES && path.join(process.env.PROGRAMFILES, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+    process.env['PROGRAMFILES(X86)'] && path.join(process.env['PROGRAMFILES(X86)'], 'Google', 'Chrome', 'Application', 'chrome.exe'),
+  ].filter(Boolean)
+
+  return candidates.find(candidate => fs.existsSync(candidate)) || 'chrome.exe'
+}
+
+const CHROME_PATH = resolveChromePath()
+const TEMP_DIR = path.join(os.tmpdir(), 'nvzhuang-chrome-shot-all')
 const H5_DIR = path.resolve('app/dist/build/h5')
 const DOCS_DIR = path.resolve('docs')
 const PORT = 9005

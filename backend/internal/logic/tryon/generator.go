@@ -44,6 +44,24 @@ type ModelConfig struct {
 
 // loadModelConfig 从配置文件加载指定模型的配置，并允许环境变量覆盖
 func loadModelConfig(ctx context.Context, alias string) (*ModelConfig, error) {
+	cfg := loadModelConfigCandidate(ctx, alias)
+	if cfg == nil {
+		return nil, fmt.Errorf("模型 %s 未配置（当前请求可能来自不支持个人模型配置的旧前端或旧后端）", alias)
+	}
+
+	provider := strings.ToLower(strings.TrimSpace(cfg.Provider))
+	if provider != "comfyui" && cfg.APIKey == "" {
+		return nil, fmt.Errorf("模型 %s 未配置 API Key（请在 config.yaml 的 llm.models.%s.apiKey 或环境变量中配置）", alias, alias)
+	}
+	if cfg.Model == "" {
+		return nil, fmt.Errorf("模型 %s 未配置 model 名（llm.models.%s.model）", alias, alias)
+	}
+	return cfg, nil
+}
+
+// loadModelConfigCandidate reads configuration without requiring credentials. It is used by
+// the no-generation provider preflight so missing keys can be reported without exposing them.
+func loadModelConfigCandidate(ctx context.Context, alias string) *ModelConfig {
 	// 按列表读取：llm.models.[alias]
 	prefix := "llm.models." + alias
 	cfg := &ModelConfig{
@@ -75,18 +93,7 @@ func loadModelConfig(ctx context.Context, alias string) (*ModelConfig, error) {
 	if cfg.Model == "" && cfg.BaseURL == "" && cfg.APIKey == "" {
 		cfg = loadLegacyConfig(ctx, alias)
 	}
-	if cfg == nil {
-		return nil, fmt.Errorf("模型 %s 未配置（当前请求可能来自不支持个人模型配置的旧前端或旧后端）", alias)
-	}
-
-	provider := strings.ToLower(strings.TrimSpace(cfg.Provider))
-	if provider != "comfyui" && cfg.APIKey == "" {
-		return nil, fmt.Errorf("模型 %s 未配置 API Key（请在 config.yaml 的 llm.models.%s.apiKey 或环境变量中配置）", alias, alias)
-	}
-	if cfg.Model == "" {
-		return nil, fmt.Errorf("模型 %s 未配置 model 名（llm.models.%s.model）", alias, alias)
-	}
-	return cfg, nil
+	return cfg
 }
 
 // loadLegacyConfig 兼容旧的 llm.openai / llm.gemini 配置写法

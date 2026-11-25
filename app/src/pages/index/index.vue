@@ -156,6 +156,12 @@ function handleGoTryon() {
   })
 }
 
+function handleGoVoice() {
+  uni.navigateTo({
+    url: '/pages/mine/voice?provider=seeduplex',
+  })
+}
+
 function handleGoMine() {
   uni.switchTab({
     url: '/pages/mine/index',
@@ -273,6 +279,22 @@ onShow(() => {
           />
         </view>
         <text class="hero-index">01 / 04</text>
+      </view>
+
+      <!-- AI 陪伴通话入口 -->
+      <view class="companion-entry" @tap="handleGoVoice">
+        <view class="companion-entry-icon">
+          <view class="i-carbon-microphone text-24px" />
+        </view>
+        <view class="companion-entry-copy">
+          <text class="companion-entry-kicker">AI COMPANION CALL</text>
+          <text class="companion-entry-title">和 AI 伴侣持续通话</text>
+          <text class="companion-entry-sub">持续开麦 · 实时字幕 · 随时插话 · 切换形象</text>
+        </view>
+        <view class="companion-entry-action">
+          <text>开始通话</text>
+          <view class="i-carbon-arrow-right text-13px" />
+        </view>
       </view>
 
       <!-- 搜索栏入口 -->
@@ -649,6 +671,67 @@ onShow(() => {
   border-radius: 34rpx;
   background: linear-gradient(125deg, #f2e7e6, #f0dadc 67%, #e9d0d3);
   margin-top: 6rpx;
+}
+
+.companion-entry {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin: 22rpx 0 6rpx;
+  padding: 24rpx;
+  border-radius: 26rpx;
+  color: #fff;
+  background: linear-gradient(135deg, #4a314a 0%, #8e4c68 58%, #d17b91 100%);
+  box-shadow: 0 10rpx 28rpx rgba(111, 57, 82, 0.2);
+}
+
+.companion-entry-icon {
+  width: 78rpx;
+  height: 78rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24rpx;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.companion-entry-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.companion-entry-kicker {
+  font-size: 15rpx;
+  font-weight: 750;
+  letter-spacing: 2rpx;
+  color: #f5d8e2;
+}
+
+.companion-entry-title {
+  margin-top: 4rpx;
+  font-size: 27rpx;
+  font-weight: 800;
+}
+
+.companion-entry-sub {
+  margin-top: 5rpx;
+  font-size: 17rpx;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.companion-entry-action {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  flex-shrink: 0;
+  font-size: 19rpx;
+  font-weight: 700;
 }
 
 .hero-copy {

@@ -3,17 +3,22 @@ package cmd
 import (
 	"context"
 
+	_ "github.com/gogf/gf/contrib/drivers/mysql/v2"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
-	"github.com/gogf/gf/v2/os/gcmd"
 	"github.com/gogf/gf/v2/os/gcfg"
+	"github.com/gogf/gf/v2/os/gcmd"
 	"github.com/gogf/gf/v2/os/gfile"
 
+	"backend/internal/configenv"
 	"backend/internal/controller/hello"
 	"backend/internal/controller/mobile"
 	"backend/internal/controller/tryon"
+	voiceController "backend/internal/controller/voice"
 	"backend/internal/imagevalidate"
+	"backend/internal/logic/todos"
 	"backend/internal/middleware"
+	"backend/internal/observability"
 	"backend/internal/security"
 )
 
@@ -53,12 +58,28 @@ var (
 		Usage: "main",
 		Brief: "start http server",
 		Func: func(ctx context.Context, parser *gcmd.Parser) (err error) {
+			dotEnvPath, err := configenv.LoadDotEnv()
+			if err != nil {
+				return err
+			}
 			InitConfigFallback(ctx)
+			overrides, err := configenv.ApplyOverrides(ctx)
+			if err != nil {
+				return err
+			}
+			if dotEnvPath != "" {
+				g.Log().Infof(ctx, "已加载后端环境配置: %s", dotEnvPath)
+			}
+			if overrides > 0 {
+				g.Log().Infof(ctx, "已应用 %d 项 NVZHUANG_ 环境变量配置覆盖", overrides)
+			}
+			todos.EnsureTable(ctx)
 
 			secService, err := security.InitService(ctx)
 			if err != nil {
 				return err
 			}
+			observabilityService := observability.NewService(observability.LoadConfig(ctx))
 
 			imgLimits := imagevalidate.LoadImageLimits(ctx)
 			corsMw := middleware.NewCORSMiddleware(secService.Config)
@@ -73,6 +94,7 @@ var (
 			s.Use(
 				middleware.RequestID,
 				corsMw.Handler,
+				observabilityService.Middleware,
 			)
 
 			s.Group("/", func(group *ghttp.RouterGroup) {
@@ -87,8 +109,11 @@ var (
 					tryon.NewV1(),
 				)
 				mobile.New().RegisterRoutes(group)
+				voiceController.New().RegisterRoutes(group)
+				observabilityService.RegisterRoutes(group)
 			})
 			s.Run()
+			observabilityService.SetReady(false)
 			return nil
 		},
 	}

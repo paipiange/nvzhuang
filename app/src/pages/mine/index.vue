@@ -55,6 +55,10 @@ function handleGoSettings() {
   })
 }
 
+function handleGoVoice() {
+  uni.navigateTo({ url: '/pages/mine/voice' })
+}
+
 function handleGoKnowledge() {
   uni.navigateTo({
     url: '/pages/knowledge/index',
@@ -189,6 +193,17 @@ onShow(() => {
           <view class="menu-text">
             <text class="menu-title">穿搭与生图知识库</text>
             <text class="menu-sub">二次元穿搭 / 提示词词典 / 换装秘籍</text>
+          </view>
+          <view class="i-carbon-chevron-right text-14px text-#a9a0a2" />
+        </view>
+
+        <view class="menu-item" @tap="handleGoVoice">
+          <view class="menu-ico m-lilac">
+            <view class="i-carbon-microphone text-17px" />
+          </view>
+          <view class="menu-text">
+            <text class="menu-title">AI 陪伴通话</text>
+            <text class="menu-sub">持续开麦、实时字幕、插话与形象切换</text>
           </view>
           <view class="i-carbon-chevron-right text-14px text-#a9a0a2" />
         </view>

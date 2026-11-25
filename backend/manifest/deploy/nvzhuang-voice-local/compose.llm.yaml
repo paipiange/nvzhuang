@@ -1,0 +1,35 @@
+# Always execute from WSL with: ./run-qwen.sh
+# All model & service caches are host bind mounts inside D:\ai\ai\nvzhuang.
+services:
+  qwen:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: nvzhuang-qwen
+    restart: unless-stopped
+    gpus: all
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      HF_HOME: /cache/huggingface
+      HF_HUB_CACHE: /cache/huggingface/hub
+      XDG_CACHE_HOME: /cache/xdg
+      CUDA_CACHE_PATH: /cache/cuda
+      TMPDIR: /cache/tmp
+      HOME: /cache/home-qwen
+    volumes:
+      - "${NVZHUANG_ROOT:?Run via run-qwen.sh first}/models/qwen:/models:ro"
+      - "${NVZHUANG_ROOT:?Run via run-qwen.sh first}/cache:/cache"
+    command:
+      - --model
+      - /models/Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --ctx-size
+      - "4096"
+      - --parallel
+      - "1"
+      - --n-gpu-layers
+      - "99"
+      - --n-predict
+      - "192"

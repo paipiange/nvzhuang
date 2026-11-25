@@ -133,13 +133,13 @@ func (o *OpenAIImages) describeVisualFeatures(ctx context.Context, personB64, ga
 					{
 						Type: "image_url",
 						ImageURL: &chatImageURL{
-							URL: "data:image/png;base64," + ensureBase64(personB64),
+							URL: providerReferenceURL(personB64),
 						},
 					},
 					{
 						Type: "image_url",
 						ImageURL: &chatImageURL{
-							URL: "data:image/png;base64," + ensureBase64(garmentB64),
+							URL: providerReferenceURL(garmentB64),
 						},
 					},
 				},
@@ -195,7 +195,11 @@ func (o *OpenAIImages) Generate(ctx context.Context, personB64, garmentB64, prom
 	isGPT := strings.Contains(strings.ToLower(o.model), "gpt-image") || strings.Contains(strings.ToLower(o.name), "gpt-image")
 	if isGPT {
 		if visualDesc := o.describeVisualFeatures(ctx, personB64, garmentB64); visualDesc != "" {
-			prompt = fmt.Sprintf("Full-body commercial fashion catalog photograph:\n%s\nStrict requirements:\n1. The adult female model from Image 1 is wearing the complete outfit from Image 2 faithfully.\n2. Fully clothed, modest neckline, standard comfortable fit, elegant posture.\n3. Clean daylight studio, neutral minimal background, photorealistic 8k, crisp fabric textures.\nOutput: ONLY the final dressed-up photograph.", visualDesc)
+			if strings.HasPrefix(prompt, portraitPromptPrefix) {
+				prompt += "\nReference appearance and outfit details: " + visualDesc
+			} else {
+				prompt = fmt.Sprintf("Full-body commercial fashion catalog photograph:\n%s\nStrict requirements:\n1. The adult female model from Image 1 is wearing the complete outfit from Image 2 faithfully.\n2. Fully clothed, modest neckline, standard comfortable fit, elegant posture.\n3. Clean daylight studio, neutral minimal background, photorealistic 8k, crisp fabric textures.\nOutput: ONLY the final dressed-up photograph.", visualDesc)
+			}
 		}
 	}
 
@@ -207,8 +211,8 @@ func (o *OpenAIImages) Generate(ctx context.Context, personB64, garmentB64, prom
 		Model:  o.model,
 		Prompt: prompt,
 		Image: []string{
-			"data:image/png;base64," + ensureBase64(personB64),
-			"data:image/png;base64," + ensureBase64(garmentB64),
+			providerReferenceURL(personB64),
+			providerReferenceURL(garmentB64),
 		},
 		Size:    normalizeOpenAISize(size),
 		Quality: "high",
@@ -273,6 +277,26 @@ func (o *OpenAIImages) downloadImage(ctx context.Context, url string) (string, e
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(data), nil
+}
+
+// providerReferenceParts preserves the MIME of a validated reference. Older
+// code calling a provider with raw base64 continues to get the PNG default.
+func providerReferenceParts(s string) (mime, data string) {
+	data = ensureBase64(s)
+	header, _, _ := strings.Cut(s, ",")
+	switch header {
+	case "data:image/jpeg;base64":
+		return "image/jpeg", data
+	case "data:image/webp;base64":
+		return "image/webp", data
+	default:
+		return "image/png", data
+	}
+}
+
+func providerReferenceURL(s string) string {
+	mime, data := providerReferenceParts(s)
+	return "data:" + mime + ";base64," + data
 }
 
 // ensureBase64 兼容：如果传入的是 data URL，去掉前缀

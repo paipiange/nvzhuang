@@ -10,6 +10,7 @@ import { uploadImageFile } from '@/api/upload'
 import { MODEL_OPTIONS } from '@/mock/data'
 import ImagePickerCard from '@/components/ImagePickerCard.vue'
 import ModelSelector from '@/components/ModelSelector.vue'
+import { confirmCloudCost, requiresCloudCostAcknowledgement } from '@/composables/companion/cloudCostGuard'
 
 defineOptions({
   name: 'TryonPage',
@@ -99,6 +100,10 @@ async function handleStartTryon() {
     return
   }
 
+  const requiresCostAck = requiresCloudCostAcknowledgement(tryonStore.draft.modelKey, settingsStore.useMock)
+  if (requiresCostAck && !await confirmCloudCost())
+    return
+
   isGenerating.value = true
   uni.showLoading({
     title: 'AI 换装计算中...',
@@ -129,6 +134,7 @@ async function handleStartTryon() {
       model_key: tryonStore.draft.modelKey,
       size: tryonStore.draft.size,
       keep_face: tryonStore.draft.keepFace,
+      cost_acknowledged: requiresCostAck,
       client_request_id: clientRequestId,
     })
 
@@ -335,7 +341,7 @@ onShow(async () => {
       </view>
 
       <view class="cost-hint">
-        图库浏览免费 · AI 换装需接入后端和模型额度
+        图库浏览免费 · 云端 AI 换装逐次确认并受每日预算保护 · 本地 ComfyUI 不计云端额度
       </view>
 
       <view class="h-24" />

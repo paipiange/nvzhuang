@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getCurrentBaseUrl, getEnvBaseUrl } from '@/utils'
+import { normalizeModelBaseUrl, normalizeServiceBaseUrl } from '@/utils/serviceEndpoint'
 
 const SETTINGS_KEY = 'nvzhuang:settings:v1'
 
@@ -11,10 +12,45 @@ export interface ClientModelConfig {
   model: string
 }
 
+const MODEL_PROVIDERS = ['gemini', 'doubao', 'openai'] as const
+
+function safeText(value: unknown, maxLength: number) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+}
+
+function safeServiceUrl(value: unknown, fallback: string) {
+  try {
+    return normalizeServiceBaseUrl(typeof value === 'string' && value.trim() ? value : fallback)
+  }
+  catch {
+    return 'http://127.0.0.1:8000'
+  }
+}
+
+function sanitizeClientConfig(value: unknown): ClientModelConfig {
+  const input = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const provider = MODEL_PROVIDERS.includes(input.provider as ClientModelConfig['provider']) ? input.provider as ClientModelConfig['provider'] : 'gemini'
+  let baseUrl = safeText(input.baseUrl, 2048)
+  try {
+    if (baseUrl)
+      baseUrl = normalizeModelBaseUrl(baseUrl)
+  }
+  catch {
+    baseUrl = ''
+  }
+  return {
+    provider,
+    baseUrl,
+    apiKey: safeText(input.apiKey, 4096),
+    model: safeText(input.model, 200),
+  }
+}
+
 export const useSettingsStore = defineStore('settings', () => {
   const serverBaseUrl = ref<string>(getCurrentBaseUrl())
   const useMock = ref<boolean>(false)
   const expertMode = ref<boolean>(false)
+  const seedVoiceApiKey = ref<string>('')
   const clientConfig = ref<ClientModelConfig>({
     provider: 'gemini',
     baseUrl: '',
@@ -26,14 +62,18 @@ export const useSettingsStore = defineStore('settings', () => {
     try {
       const stored = uni.getStorageSync(SETTINGS_KEY)
       if (stored && typeof stored === 'object') {
-        if (stored.serverBaseUrl && typeof stored.serverBaseUrl === 'string' && stored.serverBaseUrl.trim())
-          serverBaseUrl.value = stored.serverBaseUrl.trim().replace(/\/+$/, '')
+        serverBaseUrl.value = safeServiceUrl(stored.serverBaseUrl, getEnvBaseUrl())
         if (typeof stored.useMock === 'boolean')
           useMock.value = stored.useMock
         if (typeof stored.expertMode === 'boolean')
           expertMode.value = stored.expertMode
-        if (stored.clientConfig)
-          clientConfig.value = { ...clientConfig.value, ...stored.clientConfig }
+        clientConfig.value = sanitizeClientConfig(stored.clientConfig)
+        uni.setStorageSync(SETTINGS_KEY, {
+          serverBaseUrl: serverBaseUrl.value,
+          useMock: useMock.value,
+          expertMode: expertMode.value,
+          clientConfig: clientConfig.value,
+        })
       }
     }
     catch (e) {
@@ -43,8 +83,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const saveSettings = () => {
     try {
-      const cleanUrl = serverBaseUrl.value.trim().replace(/\/+$/, '')
+      const cleanUrl = safeServiceUrl(serverBaseUrl.value, getEnvBaseUrl())
       serverBaseUrl.value = cleanUrl
+      clientConfig.value = sanitizeClientConfig(clientConfig.value)
       uni.setStorageSync(SETTINGS_KEY, {
         serverBaseUrl: cleanUrl,
         useMock: useMock.value,
@@ -61,6 +102,7 @@ export const useSettingsStore = defineStore('settings', () => {
     serverBaseUrl.value = getEnvBaseUrl()
     useMock.value = false
     expertMode.value = false
+    seedVoiceApiKey.value = ''
     clientConfig.value = {
       provider: 'gemini',
       baseUrl: '',
@@ -76,6 +118,7 @@ export const useSettingsStore = defineStore('settings', () => {
     serverBaseUrl,
     useMock,
     expertMode,
+    seedVoiceApiKey,
     clientConfig,
     saveSettings,
     resetSettings,

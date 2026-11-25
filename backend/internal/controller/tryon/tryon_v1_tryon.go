@@ -24,38 +24,16 @@ func NewV1() *ControllerV1 {
 
 func (c *ControllerV1) Tryon(ctx context.Context, req *v1.TryonReq) (res *v1.TryonRes, err error) {
 	r := ghttp.RequestFromCtx(ctx)
-	secService := security.GetService()
-	imgLimits := imagevalidate.LoadImageLimits(ctx)
-
-	// 1. 严格校验两张图片（人像和服装）真实格式、文件大小、尺寸及像素
-	personImg, garmentImg, imgErr := imagevalidate.ValidateImagesPair(req.PersonImage, req.GarmentImage, imgLimits)
-	if imgErr != nil {
-		if apiErr, ok := imgErr.(*security.APIError); ok {
-			middleware.WriteAPIError(r, apiErr)
+	var poseID string
+	if req.PoseID != nil {
+		poseID = *req.PoseID
+		if !tryon.ValidPoseID(poseID) {
+			middleware.WriteAPIError(r, security.NewAPIError(422, 42206, "INVALID_POSE_ID", "请选择清单中的写真姿势"))
 			return nil, nil
 		}
-		middleware.WriteAPIError(r, security.ErrInvalidImageBase64)
-		return nil, nil
 	}
-
-	// 2. 检查并原子扣减每日调用额度
-	principalID := r.GetCtxVar(middleware.CtxPrincipalID).String()
-	if principalID == "" {
-		principalID = "anonymous"
-	}
-	if !secService.DailyQuotaTracker.CheckAndDeduct(principalID) {
-		middleware.WriteAPIError(r, security.ErrDailyQuotaExceeded)
-		return nil, nil
-	}
-
-	// 3. 并发控制（单 Token 并发与全局并发）
-	release, ok := secService.ConcurrencyManager.Acquire(principalID)
-	if !ok {
-		middleware.WriteAPIError(r, security.ErrConcurrencyLimited)
-		return nil, nil
-	}
-	defer release()
-
+	secService := security.GetService()
+	imgLimits := imagevalidate.LoadImageLimits(ctx)
 	var clientConfig *tryon.ModelConfig
 	if req.ClientConfig != nil {
 		clientConfig = &tryon.ModelConfig{
@@ -67,16 +45,66 @@ func (c *ControllerV1) Tryon(ctx context.Context, req *v1.TryonReq) (res *v1.Try
 		}
 	}
 
-	imageB64, model, prompt, err := tryon.DoTryonWithValidatedImages(
+	// 1. 严格校验两张图片（人像和服装）真实格式、文件大小、尺寸及像素
+	personImg, garmentImg, imgErr := imagevalidate.ValidateImagesPair(req.PersonImage, req.GarmentImage, imgLimits)
+	if imgErr != nil {
+		if apiErr, ok := imgErr.(*security.APIError); ok {
+			middleware.WriteAPIError(r, apiErr)
+			return nil, nil
+		}
+		middleware.WriteAPIError(r, security.ErrInvalidImageBase64)
+		return nil, nil
+	}
+	cloudGeneration, costErr := tryon.IsCloudGeneration(ctx, req.Model, clientConfig)
+	if costErr != nil {
+		return nil, costErr
+	}
+
+	// 2. 云端调用必须逐次确认，并受独立的全局/调用方预算保护。
+	principalID := r.GetCtxVar(middleware.CtxPrincipalID).String()
+	if principalID == "" {
+		principalID = "anonymous"
+	}
+	if cloudGeneration {
+		if secService.Config.CostGuard.RequireAcknowledgement && !req.CostAcknowledged {
+			middleware.WriteAPIError(r, security.ErrCostAcknowledgementRequired)
+			return nil, nil
+		}
+		if !secService.CloudBudgetTracker.CheckAndDeduct(principalID) {
+			middleware.WriteAPIError(r, security.ErrCloudBudgetExceeded)
+			return nil, nil
+		}
+	}
+
+	// 3. 检查并原子扣减每日调用额度
+	if !secService.DailyQuotaTracker.CheckAndDeduct(principalID) {
+		middleware.WriteAPIError(r, security.ErrDailyQuotaExceeded)
+		return nil, nil
+	}
+
+	// 4. 并发控制（单 Token 并发与全局并发）
+	release, ok := secService.ConcurrencyManager.Acquire(principalID)
+	if !ok {
+		middleware.WriteAPIError(r, security.ErrConcurrencyLimited)
+		return nil, nil
+	}
+	defer release()
+
+	imageB64, model, prompt, err := tryon.DoTryonWithValidatedPose(
 		ctx,
 		personImg,
 		garmentImg,
 		req.Model,
 		req.Size,
 		req.Lang,
+		poseID,
 		clientConfig,
 	)
 	if err != nil {
+		if poseID != "" {
+			middleware.WriteAPIError(r, security.NewAPIError(502, 50206, "portrait_generation_failed", "写真生成失败，请检查图像模型后手动重试"))
+			return nil, nil
+		}
 		return nil, err
 	}
 	imageMIME, err := tryon.DetectGeneratedImageMIME(imageB64)
@@ -103,5 +131,25 @@ func (c *ControllerV1) ComfyUIHealth(ctx context.Context, req *v1.ComfyUIHealthR
 		Available: true,
 		Model:     model,
 		Message:   "本地 ComfyUI 固定工作流可用",
+	}, nil
+}
+
+func (c *ControllerV1) ProviderHealth(ctx context.Context, req *v1.ProviderHealthReq) (res *v1.ProviderHealthRes, err error) {
+	checks := tryon.CheckImageProviders(ctx)
+	items := make([]v1.ProviderHealthItem, 0, len(checks))
+	for _, check := range checks {
+		items = append(items, v1.ProviderHealthItem{
+			Alias:      check.Alias,
+			Provider:   check.Provider,
+			Model:      check.Model,
+			Local:      check.Local,
+			Configured: check.Configured,
+			Reachable:  check.Reachable,
+			Message:    check.Message,
+		})
+	}
+	return &v1.ProviderHealthRes{
+		GenerationRequestMade: false,
+		Providers:             items,
 	}, nil
 }

@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbf8f5">
+  <meta name="description" content="知夏——属于你的 AI 虚拟女友与温柔聊天空间。">
+  <title>知夏 · AI 虚拟女友</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="主导航">
+      <a class="wordmark" href="/" aria-label="知夏首页">
+        <span class="brand-flower" aria-hidden="true">✳</span>
+        <span>mori<span class="brand-dot">.</span></span>
+      </a>
+      <div class="sidebar-caption">YOUR LITTLE UNIVERSE</div>
+      <button class="sidebar-link active" type="button" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">☁</span> 和知夏聊天
+      </button>
+      <button class="sidebar-link" id="new-chat" type="button">
+        <span class="nav-icon plus-icon" aria-hidden="true">＋</span> 开启新对话
+      </button>
+      <button class="sidebar-link" id="export-chat" type="button" disabled>
+        <span class="nav-icon" aria-hidden="true">⇩</span> 导出聊天记录
+      </button>
+      <div class="sidebar-spacer"></div>
+      <div class="privacy-card">
+        <span class="privacy-lock" aria-hidden="true">⌑</span>
+        <div>
+          <strong>小小的私密空间</strong>
+          <p>对话记录和模型设置只保存在这台设备上。</p>
+        </div>
+      </div>
+      <button class="sidebar-settings" id="open-settings-side" type="button">
+        <span aria-hidden="true">⚙</span> 模型与 API 设置
+        <span class="settings-dot" id="sidebar-config-dot" aria-hidden="true"></span>
+      </button>
+      <div class="sidebar-foot">made with a little warmth <span aria-hidden="true">♡</span></div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobile-menu" type="button" aria-label="打开导航" aria-expanded="false" aria-controls="sidebar">☰</button>
+        <div class="topbar-heading">
+          <div class="eyebrow">YOUR AI COMPANION</div>
+          <h1><span id="page-character-name">和知夏在一起</span> <span class="tiny-sparkle" aria-hidden="true">✳</span></h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="local-pill"><span class="status-dot" id="connection-dot"></span><span id="connection-label">等待连接</span></div>
+          <button class="mobile-studio-button" id="mobile-studio" type="button" aria-label="打开形象工作室" aria-expanded="false" aria-controls="companion-panel">形象 ✿</button>
+          <button class="icon-button settings-button" id="open-settings" type="button" aria-label="模型与 API 设置" title="模型与 API 设置">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.6 2.77-.09-.02a1.7 1.7 0 0 0-1.81.71l-.05.08h-3.2l-.03-.09a1.7 1.7 0 0 0-1.54-1.07h-.1l-2.78-1.6.02-.1a1.7 1.7 0 0 0-.71-1.8l-.08-.06v-3.2l.09-.03a1.7 1.7 0 0 0 1.07-1.54v-.1l1.6-2.77.1.01a1.7 1.7 0 0 0 1.8-.7l.06-.09h3.2l.03.1a1.7 1.7 0 0 0 1.54 1.06h.1l2.77 1.6-.01.1a1.7 1.7 0 0 0 .7 1.8l.09.06v3.2l-.1.03a1.7 1.7 0 0 0-1.06 1.54z" transform="translate(-1.5 -1.5) scale(1.12)"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <section class="conversation" aria-label="与当前角色聊天">
+          <div class="conversation-scroll" id="conversation-scroll">
+            <div class="welcome" id="welcome">
+              <div class="welcome-avatar" aria-hidden="true">
+                <span class="avatar-orbit orbit-one"></span><span class="avatar-orbit orbit-two"></span>
+                <span class="avatar-face">知</span><span class="avatar-heart">♡</span>
+              </div>
+              <div class="welcome-kicker"><span class="kicker-line"></span> A LITTLE MOMENT FOR YOU <span class="kicker-line"></span></div>
+              <h2>嗨，<span>今天想和我聊些什么？</span></h2>
+              <p class="welcome-copy">不管是开心的小事，还是想找个人说说话，我都会认真听。</p>
+              <div class="suggestions" aria-label="试着这样开始">
+                <button class="suggestion" type="button" data-prompt="今天有点累，想跟你聊一会儿。"><span>☁</span> 今天有点累，想跟你聊一会儿</button>
+                <button class="suggestion" type="button" data-prompt="分享一件今天发生的小事吧。"><span>✦</span> 分享一件今天发生的小事</button>
+                <button class="suggestion" type="button" data-prompt="给我推荐一首适合夜晚听的歌。"><span>♫</span> 推荐一首适合夜晚的歌</button>
+              </div>
+              <div class="first-run-note" id="first-run-note"><span aria-hidden="true">✳</span> 先连接你自己的模型，就可以开始聊天啦</div>
+            </div>
+            <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+            <div class="typing-indicator" id="typing-indicator" aria-live="polite" hidden>
+              <span class="typing-avatar" aria-hidden="true">知</span>
+              <span class="typing-bubble"><i></i><i></i><i></i></span>
+              <span class="typing-label">角色正在想怎么回答…</span>
+            </div>
+          </div>
+          <form class="composer" id="composer-form">
+            <label class="sr-only" for="message-input">输入要发送给当前角色的消息</label>
+            <textarea id="message-input" name="message" rows="1" maxlength="4000" aria-describedby="character-count local-voice-status" placeholder="写下你此刻的心情…" autocomplete="off"></textarea>
+            <div class="composer-bottom">
+              <div class="composer-hint"><kbd>Enter</kbd> 发送 <span class="hint-divider">·</span> <kbd>Shift</kbd><span class="plus-text">+</span><kbd>Enter</kbd> 换行</div>
+              <div class="composer-tools">
+                <span class="character-count" id="character-count">0 / 4000</span>
+                <button class="mic-button" id="duplex-button" type="button" aria-label="开始豆包持续通话" aria-pressed="false" aria-describedby="duplex-hint" hidden>开始通话</button>
+                <button class="mic-button" id="mic-button" type="button" aria-label="开始语音输入" hidden>语音</button>
+                <button class="interrupt-button" id="interrupt-local-voice" type="button" hidden>打断</button>
+                <button class="send-button" id="send-button" type="submit" aria-label="发送消息" title="发送消息">
+                  <span id="send-label">发送</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h12M9 4l6 6-6 6"/></svg>
+                </button>
+              </div>
+            </div>
+          </form>
+          <p class="local-voice-status" id="local-voice-status" role="status" aria-live="polite" hidden></p>
+          <p class="local-voice-status" id="duplex-hint" hidden>持续开麦由豆包 VAD 自动分轮，可直接插话；检测到回声时建议佩戴耳机。按轮语音入口仍可使用。</p>
+          <div class="local-voice-status" id="duplex-captions" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+          <p class="fine-print">陪伴角色由 AI 驱动，回答由你选择的模型生成。请勿在对话中分享密码等敏感信息。</p>
+        </section>
+
+        <aside class="companion-panel" id="companion-panel" aria-label="角色形象工作室">
+          <section class="studio-card">
+            <div class="profile-card-top"><span>YOUR GIRLFRIEND</span><span class="profile-star" aria-hidden="true">✧</span></div>
+            <div class="avatar-stage" id="avatar-stage" data-pose="natural">
+              <div class="avatar-stage-halo"></div>
+              <img class="avatar-stage-image" id="avatar-stage-image" alt="知夏当前形象" src="/assets/portrait/thumbs/f000a1c4200.webp">
+              <div class="selected-outfit-preview" id="selected-outfit-preview"><img id="selected-outfit-image" alt="当前选择的服装"><span>今日穿搭 <strong id="selected-outfit-label">选择一套衣服</strong></span></div>
+              <span class="stage-badge"><span class="online-dot"></span> <span id="stage-character-name">知夏 · 在线</span></span>
+              <button class="stage-change" id="stage-change-avatar" type="button">换头像</button>
+              <button class="stage-generate" id="generate-tryon" type="button"><span aria-hidden="true">✦</span> 生成这套穿搭</button>
+              <span class="pose-sparkle sparkle-left" aria-hidden="true">✦</span><span class="pose-sparkle sparkle-right" aria-hidden="true">✳</span>
+            </div>
+            <div class="avatar-heading"><div><h2 id="studio-character-name">知夏</h2><p>AI 虚拟陪伴角色 · 静态预览</p></div><span class="profile-heart" aria-hidden="true">♡</span></div>
+            <p class="profile-bio">温柔、好奇，也喜欢听你认真讲那些小小的日常。</p>
+            <p class="local-voice-status" id="portrait-status" role="status" aria-live="polite" hidden></p>
+            <div class="studio-divider"></div>
+            <label class="pose-label" for="character-select">陪伴角色</label>
+            <select class="pose-select" id="character-select"></select>
+            <div class="studio-control-title">换一个样子 <span>选择后会记在这台设备</span></div>
+            <div class="studio-actions">
+              <button class="studio-action" id="choose-avatar" type="button"><span class="studio-action-icon">◉</span><span><strong>头像</strong><small id="avatar-caption">从本地模特库选择</small></span><span class="studio-chevron">›</span></button>
+              <button class="studio-action" id="choose-outfit" type="button"><span class="studio-action-icon outfit-icon">✿</span><span><strong>衣服</strong><small id="outfit-caption">换一套日常穿搭</small></span><span class="studio-chevron">›</span></button>
+            </div>
+            <label class="pose-label" for="pose-select">今日姿势</label>
+            <select class="pose-select" id="pose-select">
+              <option value="natural">☁ 自然站姿</option>
+              <option value="wave">👋 挥手打招呼</option>
+              <option value="heart">♡ 双手比心</option>
+              <option value="peace">✌ 俏皮剪刀手</option>
+              <option value="sitting">☕ 优雅坐姿</option>
+              <option value="profile">✧ 回眸侧身</option>
+            </select>
+            <div class="voice-row"><span class="voice-mark" aria-hidden="true">♫</span><div><strong>回复语音</strong><small>用本机中文语音朗读回复</small></div><button class="voice-toggle" id="voice-toggle" type="button" aria-pressed="true">自动朗读 · 开</button></div>
+            <div class="profile-quote">“慢慢来呀，今天能走到这里已经很棒啦。”</div>
+          </section>
+          <button class="clear-chat" id="clear-chat" type="button">清除本机聊天记录</button>
+          <button class="clear-chat" id="clear-local-memory" type="button">清空本机 Qwen 会话记忆</button>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+
+  <dialog class="picker-dialog" id="picker-dialog" aria-labelledby="picker-title">
+    <div class="picker-shell">
+      <div class="dialog-topline"><span class="dialog-mark" aria-hidden="true">✿</span><button class="dialog-close" id="close-picker" type="button" aria-label="关闭">×</button></div>
+      <p class="dialog-eyebrow">COMPANION STUDIO</p>
+      <h2 id="picker-title">挑一张喜欢的头像</h2>
+      <p class="dialog-intro" id="picker-description">从本地 AI 模特库选择一张成年女性形象。</p>
+      <div class="picker-filterbar" id="avatar-filterbar">
+        <button class="picker-filter selected" type="button" data-avatar-filter="styling">全身造型</button>
+        <button class="picker-filter" type="button" data-avatar-filter="face">面部头像</button>
+        <span class="picker-result-count" id="picker-result-count"></span>
+      </div>
+      <div class="picker-filterbar" id="outfit-filterbar" hidden>
+        <button class="picker-filter selected" type="button" data-outfit-library="real">真人穿搭</button>
+        <button class="picker-filter" type="button" data-outfit-library="anime">动漫穿搭</button>
+        <span class="picker-result-count" id="outfit-result-count"></span>
+      </div>
+      <label class="picker-search-label" for="picker-search">搜索造型或衣服</label>
+      <input class="field-input picker-search" id="picker-search" type="search" placeholder="输入关键词或编号…" autocomplete="off">
+      <div class="picker-grid" id="picker-grid" aria-live="polite"></div>
+      <button class="picker-more" id="picker-more" type="button" hidden>加载更多</button>
+      <div class="picker-bottom"><span>预览图片来自项目内置本地图库</span><button class="picker-done" id="close-picker-done" type="button">完成 <span aria-hidden="true">→</span></button></div>
+    </div>
+  </dialog>
+
+  <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+    <form class="settings-form" id="settings-form">
+      <div class="dialog-topline"><span class="dialog-mark" aria-hidden="true">✳</span><button class="dialog-close" id="close-settings" type="button" aria-label="关闭">×</button></div>
+      <p class="dialog-eyebrow">MAKE IT YOURS</p>
+      <h2 id="settings-title">连接你的模型</h2>
+      <p class="dialog-intro">默认优先本机 Qwen 对话与语音；需要云端语音时可选豆包 SeedDuplex 3.0。云端文字聊天需手动切换。</p>
+      <label class="field-label" for="chat-mode">聊天与语音引擎</label>
+      <select class="field-input" id="chat-mode"><option value="local">本机语音（Qwen + FunASR + CosyVoice）</option><option value="seeduplex">豆包语音大模型 3.0（Seeduplex）</option><option value="remote">云端文字聊天（OpenAI 兼容）</option></select>
+      <div id="local-backend-fields">
+        <label class="field-label" for="local-backend-url">本机后端地址</label>
+        <input class="field-input" id="local-backend-url" type="url" inputmode="url" value="http://127.0.0.1:8000" autocomplete="url">
+        <p class="field-help">仅允许 localhost / 127.0.0.1 / [::1]。MuMu 测试需在主机用 ADB reverse 转发 8000 和 8787 端口。</p>
+        <button class="reuse-chat-key" id="check-voice-health" type="button" aria-describedby="voice-health-status">检查语音连接</button>
+        <p class="field-help" id="voice-health-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+        <p class="field-help">只检查当前地址的后端与模型服务，不保存设置、不发送浏览器 Key 或聊天、不产生云端推理请求。Key 已配置不代表账号权限验证通过。</p>
+        <p class="field-help">本连接记忆只保留最近 6 轮 / 6000 字符，断开或刷新页面会清空。</p>
+      </div>
+      <div id="seeduplex-fields" hidden>
+        <label class="field-label" for="seeduplex-api-key">豆包语音 API Key</label>
+        <input class="field-input" id="seeduplex-api-key" type="password" autocomplete="new-password" maxlength="2048" placeholder="填写豆包语音控制台的 API Key；后端已配置时可留空">
+        <p class="field-help">使用豆包语音控制台开通的 Seeduplex 3.0 Key，火山方舟文字模型 Key 不保证可用。Key 仅保存在当前页面运行内存，刷新或关闭页面后需重新输入；也可留空使用后端 SEEDUPLEX_API_KEY。</p>
+        <p class="field-help">保存后点击“开始通话”持续开麦，AI 回复时可直接插话；“结束通话”立即释放麦克风。也可选择“按轮语音”手动结束每轮。录音经本机后端发送给豆包并消耗其额度，通话不会自动重试。缺少 AudioWorklet 的浏览器只提供明确标注的按轮模式；新建会话不代表删除服务商已有数据。</p>
+      </div>
+      <div id="remote-chat-fields">
+      <div class="preset-row" aria-label="常用服务预设">
+        <button type="button" class="preset-chip" data-preset="openai">OpenAI</button>
+        <button type="button" class="preset-chip" data-preset="deepseek">DeepSeek</button>
+        <button type="button" class="preset-chip" data-preset="qwen">通义千问</button>
+        <button type="button" class="preset-chip" data-preset="openrouter">OpenRouter</button>
+      </div>
+      <label class="field-label" for="base-url">API Base URL</label>
+      <input class="field-input" id="base-url" type="url" inputmode="url" placeholder="https://api.example.com/v1" autocomplete="url">
+      <p class="field-help">使用官方 HTTPS 接口；本机 Ollama 等服务可使用 localhost。</p>
+      <label class="field-label" for="model-name">模型名称</label>
+      <input class="field-input" id="model-name" type="text" placeholder="例如 deepseek-chat" autocomplete="off" maxlength="120">
+      <label class="field-label" for="api-key">API Key</label>
+      <div class="secret-input-row"><input class="field-input" id="api-key" type="password" placeholder="粘贴你自己的 API Key" autocomplete="new-password" maxlength="2048"><button class="reveal-key" id="reveal-key" type="button" aria-label="显示 API Key">显示</button></div>
+      <div class="security-note"><span aria-hidden="true">⌑</span><p>聊天 Key 和记录仅保存在这台设备。模型请求经本机代理发送到你填写的服务商；本应用不上传或记录你的 Key。</p></div>
+      </div>
+      <div class="model-section-heading"><span aria-hidden="true">✦</span><div><strong>角色换装图像模型</strong><small>图片生成与聊天回复是不同能力，通常需要支持图像编辑的模型。</small></div></div>
+      <label class="field-label" for="image-provider">图片服务协议</label>
+      <select class="field-input" id="image-provider"><option value="gemini">Gemini 图像模型</option><option value="openai">OpenAI Images 兼容服务</option></select>
+      <label class="field-label" for="image-base-url">图片 API Base URL</label>
+      <input class="field-input" id="image-base-url" type="url" inputmode="url" placeholder="https://generativelanguage.googleapis.com/v1beta" autocomplete="url">
+      <label class="field-label" for="image-model">图片模型名称</label>
+      <input class="field-input" id="image-model" type="text" placeholder="例如 gemini-3.1-flash-image" autocomplete="off" maxlength="120">
+      <label class="field-label" for="image-api-key">图片模型 API Key</label>
+      <input class="field-input" id="image-api-key" type="password" placeholder="填写支持图像编辑的模型 Key" autocomplete="new-password" maxlength="2048">
+      <button class="reuse-chat-key" id="reuse-chat-key" type="button">从上方聊天设置复制 Key</button>
+      <p class="image-model-note">图片 Key 可以与聊天 Key 相同，但只有该服务商及模型支持图像编辑时才可复用。生成会把已选本地头像和服装图片发给图片模型，并消耗其额度。</p>
+      <p class="form-error" id="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="forget-key" id="forget-key" type="button">移除本机 Key</button><button class="save-settings" type="submit"><span>保存设置</span><span aria-hidden="true">→</span></button></div>
+      <p class="dialog-footer">仅填写你信任的 HTTPS 服务地址，勿把 Key 交给他人。</p>
+    </form>
+  </dialog>
+</body>
+</html>

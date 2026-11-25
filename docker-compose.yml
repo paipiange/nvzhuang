@@ -15,7 +15,15 @@ services:
     environment:
       # 可在根目录或 backend 目录配置 .env 注入对应 Key
       - GF_SERVER_ADDRESS=:8000
+      - NVZHUANG_OBSERVABILITY_METRICS_ENABLED=${NVZHUANG_OBSERVABILITY_METRICS_ENABLED:-true}
+      - NVZHUANG_OBSERVABILITY_ALLOW_REMOTE_METRICS=${NVZHUANG_OBSERVABILITY_ALLOW_REMOTE_METRICS:-false}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ARK_API_KEY=${ARK_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

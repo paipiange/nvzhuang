@@ -1,0 +1,20 @@
+# Local desktop launcher only. No credentials or conversation data belong here.
+server:
+  address: '127.0.0.1:8000'
+  dumpRouterMap: false
+security:
+  authRequired: false
+  trustedOrigins:
+    - 'http://127.0.0.1:8000'
+    - 'http://localhost:8000'
+    - 'http://127.0.0.1:8787'
+    - 'http://localhost:8787'
+    - 'https://appassets.androidplatform.net'
+  rateLimit:
+    requestsPerMinute: 1000
+    burst: 100
+voice:
+  root: 'D:/ai/ai/nvzhuang'
+  ffmpeg: 'ffmpeg'
+logger:
+  level: 'warning'

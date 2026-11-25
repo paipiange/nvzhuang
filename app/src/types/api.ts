@@ -27,5 +27,6 @@ export interface TryonJobCreateReq {
   model_key: string
   size: string
   keep_face: boolean
+  cost_acknowledged: boolean
   client_request_id?: string
 }

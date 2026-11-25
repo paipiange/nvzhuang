@@ -8,11 +8,13 @@ import (
 
 type SecurityConfig struct {
 	AuthRequired        bool              `json:"authRequired"`
+	APIKeys             []string          `json:"apiKeys"`
 	APIKeysEnv          string            `json:"apiKeysEnv"`
 	TrustedOrigins      []string          `json:"trustedOrigins"`
 	AllowPrivateNetwork bool              `json:"allowPrivateNetwork"`
 	RateLimit           RateLimitConfig   `json:"rateLimit"`
 	Concurrency         ConcurrencyConfig `json:"concurrency"`
+	CostGuard           CostGuardConfig   `json:"costGuard"`
 }
 
 type RateLimitConfig struct {
@@ -25,6 +27,12 @@ type RateLimitConfig struct {
 type ConcurrencyConfig struct {
 	Global       int `json:"global"`
 	PerPrincipal int `json:"perPrincipal"`
+}
+
+type CostGuardConfig struct {
+	RequireAcknowledgement bool `json:"requireAcknowledgement"`
+	DailyCloudGlobal       int  `json:"dailyCloudGlobal"`
+	DailyCloudPerPrincipal int  `json:"dailyCloudPerPrincipal"`
 }
 
 func DefaultSecurityConfig() *SecurityConfig {
@@ -51,6 +59,11 @@ func DefaultSecurityConfig() *SecurityConfig {
 			Global:       2,
 			PerPrincipal: 1,
 		},
+		CostGuard: CostGuardConfig{
+			RequireAcknowledgement: true,
+			DailyCloudGlobal:       100,
+			DailyCloudPerPrincipal: 20,
+		},
 	}
 }
 
@@ -68,6 +81,7 @@ func LoadSecurityConfig(ctx context.Context) (*SecurityConfig, error) {
 	if cfg.APIKeysEnv == "" {
 		cfg.APIKeysEnv = "TRYON_API_KEYS"
 	}
+	cfg.CostGuard.RequireAcknowledgement = g.Cfg().MustGet(ctx, "security.costGuard.requireAcknowledgement", true).Bool()
 	if len(cfg.TrustedOrigins) == 0 {
 		cfg.TrustedOrigins = []string{
 			"https://paipiange.github.io",
@@ -96,6 +110,12 @@ func LoadSecurityConfig(ctx context.Context) (*SecurityConfig, error) {
 	}
 	if cfg.Concurrency.PerPrincipal <= 0 {
 		cfg.Concurrency.PerPrincipal = 1
+	}
+	if cfg.CostGuard.DailyCloudGlobal <= 0 {
+		cfg.CostGuard.DailyCloudGlobal = 100
+	}
+	if cfg.CostGuard.DailyCloudPerPrincipal <= 0 {
+		cfg.CostGuard.DailyCloudPerPrincipal = 20
 	}
 
 	return cfg, nil

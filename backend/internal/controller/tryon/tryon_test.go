@@ -134,6 +134,37 @@ func TestControllerTryonImageValidation(t *testing.T) {
 	}
 }
 
+func TestControllerTryonRejectsUnlistedPoseIDs(t *testing.T) {
+	s := g.Server("test-ctrl-tryon-pose")
+	s.Group("/", func(group *ghttp.RouterGroup) {
+		group.Middleware(middleware.RequestID)
+		group.Bind(NewV1())
+	})
+	s.SetPort(0)
+	if err := s.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer s.Shutdown()
+	port := strings.Split(s.GetListenedAddress(), ":")[1]
+	for _, tc := range []struct{ pose, code string }{
+		{"", "INVALID_POSE_ID"}, {"../pose.webp", "INVALID_POSE_ID"},
+		{"https://example.invalid/pose", "INVALID_POSE_ID"}, {"wave", "INVALID_IMAGE_BASE64"},
+	} {
+		t.Run(tc.pose, func(t *testing.T) {
+			body, _ := json.Marshal(v1.TryonReq{PersonImage: "invalid!", GarmentImage: "invalid!", PoseID: &tc.pose})
+			res, err := http.Post("http://127.0.0.1:"+port+"/tryon", "application/json", bytes.NewReader(body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer res.Body.Close()
+			data, err := io.ReadAll(res.Body)
+			if err != nil || res.StatusCode != http.StatusUnprocessableEntity || !bytes.Contains(data, []byte(tc.code)) {
+				t.Fatalf("want HTTP 422 %s, got %d %s (%v)", tc.code, res.StatusCode, data, err)
+			}
+		})
+	}
+}
+
 func TestControllerTryonQuotaAndConcurrency(t *testing.T) {
 	secService := security.GetService()
 	// 设置配额为 1 进行测试
@@ -160,8 +191,9 @@ func TestControllerTryonQuotaAndConcurrency(t *testing.T) {
 
 	// 发起请求，应当直接触发 DAILY_QUOTA_EXCEEDED (42902)
 	tryReq := v1.TryonReq{
-		PersonImage:  validPerson,
-		GarmentImage: validGarment,
+		PersonImage:      validPerson,
+		GarmentImage:     validGarment,
+		CostAcknowledged: true,
 	}
 	reqBody, _ := json.Marshal(tryReq)
 	req, _ := http.NewRequest(http.MethodPost, "http://127.0.0.1:"+port+"/tryon", bytes.NewReader(reqBody))
@@ -185,6 +217,40 @@ func TestControllerTryonQuotaAndConcurrency(t *testing.T) {
 	_ = json.Unmarshal(b, &res)
 	if res.Code != 42902 || res.Data.ErrorCode != "DAILY_QUOTA_EXCEEDED" {
 		t.Fatalf("unexpected quota res: %+v", res)
+	}
+}
+
+func TestControllerTryonRequiresCloudCostAcknowledgement(t *testing.T) {
+	secService := security.GetService()
+	secService.DailyQuotaTracker = security.NewDailyQuotaTracker(100)
+	secService.CloudBudgetTracker = security.NewCloudBudgetTracker(100, 20)
+	secService.ConcurrencyManager = security.NewConcurrencyManager(2, 1)
+
+	s := g.Server("test-ctrl-cost-ack")
+	s.Group("/", func(group *ghttp.RouterGroup) {
+		group.Middleware(middleware.RequestID)
+		group.Bind(NewV1())
+	})
+	s.SetPort(0)
+	if err := s.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer s.Shutdown()
+
+	port := strings.Split(s.GetListenedAddress(), ":")[1]
+	body, _ := json.Marshal(v1.TryonReq{
+		PersonImage:  createTestPNG(300, 300),
+		GarmentImage: createTestPNG(300, 300),
+		Model:        "gemini",
+	})
+	response, err := http.Post("http://127.0.0.1:"+port+"/tryon", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	payload, _ := io.ReadAll(response.Body)
+	if response.StatusCode != http.StatusPaymentRequired || !bytes.Contains(payload, []byte("COST_ACKNOWLEDGEMENT_REQUIRED")) {
+		t.Fatalf("expected cost acknowledgement error, got %d %s", response.StatusCode, payload)
 	}
 }
 

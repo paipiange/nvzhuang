@@ -33,6 +33,7 @@ import ViteRestart from 'vite-plugin-restart'
 import { defineTypesPlugin } from 'vite-plugin-define-types-dts'
 import openDevTools from './scripts/open-dev-tools'
 import vitePluginEruda from './scripts/vite-plugin-eruda'
+import { resolveAppTitle } from './src/config/appMetadata'
 import { createCopyNativeResourcesPlugin } from './vite-plugins/copy-native-resources'
 import syncManifestPlugin from './vite-plugins/sync-manifest-plugins'
 
@@ -69,6 +70,7 @@ export default defineConfig(({ command, mode }) => {
     VITE_APP_PROXY_PREFIX,
     VITE_COPY_NATIVE_RES_ENABLE,
   } = env
+  const appTitle = resolveAppTitle(VITE_APP_TITLE)
   const { WECHAT_DEVTOOLS_CLI_PATH } = localEnv
   console.log('环境变量 env -> ', env)
 
@@ -136,7 +138,7 @@ export default defineConfig(({ command, mode }) => {
         transformIndexHtml(html) {
           return html
             .replace('%BUILD_TIME%', dayjs().format('YYYY-MM-DD HH:mm:ss'))
-            .replace('%VITE_APP_TITLE%', VITE_APP_TITLE)
+            .replace('__NVZHUANG_APP_TITLE__', appTitle)
         },
       },
       // 打包分析插件，h5 + 生产环境才弹出

@@ -70,6 +70,31 @@ func TestTokenStoreAuthRequiredFailsWithoutTokens(t *testing.T) {
 	}
 }
 
+func TestTokenStoreFallsBackToConfigTokens(t *testing.T) {
+	envKey := "TEST_CONFIG_TOKEN_ENV"
+	t.Setenv(envKey, "")
+	configured := "config-token-12345678901234567890"
+	store, err := NewTokenStoreWithConfig(true, envKey, []string{configured})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := store.ValidateToken(configured); !ok {
+		t.Fatal("expected config.yaml token to be accepted")
+	}
+	environment := "environment-token-1234567890123456"
+	t.Setenv(envKey, environment)
+	store, err = NewTokenStoreWithConfig(true, envKey, []string{configured})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := store.ValidateToken(environment); !ok {
+		t.Fatal("expected environment token to override config tokens")
+	}
+	if _, ok := store.ValidateToken(configured); ok {
+		t.Fatal("config token must not remain active when environment override is set")
+	}
+}
+
 func TestRateLimiter(t *testing.T) {
 	limiter := NewRateLimiter(60, 2, 10) // 60 rpm = 1 req/s, burst 2
 	pid := "test-principal"
@@ -150,4 +175,20 @@ func TestConcurrencyManager(t *testing.T) {
 
 	release2()
 	release3()
+}
+
+func TestCloudBudgetTrackerEnforcesPrincipalAndGlobalLimits(t *testing.T) {
+	tracker := NewCloudBudgetTracker(3, 2)
+	if !tracker.CheckAndDeduct("user-1") || !tracker.CheckAndDeduct("user-1") {
+		t.Fatal("user-1 should consume its two daily cloud requests")
+	}
+	if tracker.CheckAndDeduct("user-1") {
+		t.Fatal("user-1 should be blocked by the per-principal cloud budget")
+	}
+	if !tracker.CheckAndDeduct("user-2") {
+		t.Fatal("user-2 should consume the remaining global request")
+	}
+	if tracker.CheckAndDeduct("user-3") {
+		t.Fatal("global cloud budget should block additional requests")
+	}
 }

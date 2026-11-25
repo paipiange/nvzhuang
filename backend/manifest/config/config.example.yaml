@@ -70,6 +70,11 @@ server:
 #     dumpRouterMap:       true               # 是否在Server启动时打印所有的路由列表。默认为true
 #     graceful:            false              # 是否开启平滑重启特性，开启时将会在本地增加10000的本地TCP端口用于进程间通信。默认false             
 #     gracefulTimeout:     2                  # 父进程在平滑重启后多少秒退出，默认2秒。若请求耗时大于该值，可能会导致请求中断
+
+observability:
+  metricsEnabled: true          # 启用 /metrics 聚合指标，不记录请求体、对话、图片、Token 或 IP
+  allowRemoteMetrics: false     # 默认仅允许本机回环访问；远程 Prometheus 采集时才显式开启
+
 # 日志配置
 logger:
   # path:                  ""                    # 日志文件路径。默认为空，表示关闭，仅输出到终端
@@ -193,6 +198,7 @@ llm:
 # 接口安全与访问控制配置
 security:
   authRequired: true                # 是否强制 Bearer Token 访问鉴权。本地调试可设为 false，线上部署必须为 true
+  apiKeys: []                       # 也可直接配置 Token；真实 config.yaml 已被忽略，禁止写入 config.example.yaml
   apiKeysEnv: "TRYON_API_KEYS"      # 读取有效后端 Token 的环境变量名（多 Token 以英文逗号分隔，每个 32~512 字符）
   trustedOrigins:                   # CORS 严格白名单（精确匹配，禁止 *）
     - "https://paipiange.github.io"
@@ -217,6 +223,10 @@ security:
   concurrency:
     global: 2                       # 全局最大生图并发数
     perPrincipal: 1                 # 单调用方最大生图并发数
+  costGuard:
+    requireAcknowledgement: true    # 云端生图必须由客户端逐次确认可能产生费用；本地 ComfyUI 不受影响
+    dailyCloudGlobal: 100           # 所有调用方每日云端生图总预算（内存计数，重启后重置）
+    dailyCloudPerPrincipal: 20      # 单调用方每日云端生图预算（内存计数，重启后重置）
 
 # 请求体与图片安全限制
 upload:
@@ -233,6 +243,31 @@ upload:
     - "image/jpeg"
     - "image/png"
     - "image/webp"
+
+# 本地语音服务。模型下载脚本默认使用语音包指定目录；可在这里设置项目自己的数据目录。
+voice:
+  root: "D:/ai/ai/nvzhuang"
+  ffmpeg: "ffmpeg"
+  download:
+    huggingFaceToken: ""           # 或在 .env 中设置 HF_TOKEN / HUGGINGFACE_HUB_TOKEN
+    modelScopeToken: ""            # 或在 .env 中设置 MODELSCOPE_API_TOKEN
+  cosyvoice:
+    referenceWav: ""               # 授权参考音频路径；也可设置 COSYVOICE_REFERENCE_WAV
+    referenceText: ""              # 参考音频准确文本；也可设置 COSYVOICE_REFERENCE_TEXT
+    linxiReferenceWav: ""          # 林溪授权参考音频；需与文本同时配置
+    linxiReferenceText: ""
+  seeduplex:
+    apiKey: ""                      # 或在 .env 中设置 SEEDUPLEX_API_KEY
+    voice: "zh_female_vv_jupiter_bigtts"
+    voices:
+      zhixia: "zh_female_vv_jupiter_bigtts"
+      linxi: ""                     # 配置已授权的上游音色名后才开放林溪角色
+  local:
+    voices:
+      zhixia: "local-reference"
+      linxi: ""                     # 配置本机 CosyVoice 已注册音色后才开放林溪角色
+  # 可选 Open-LLM-VTuber；只允许本机回环 ws/wss，环境变量 OPEN_LLM_VTUBER_WS_URL 优先。
+  open_llm_vtuber_ws_url: "ws://127.0.0.1:12393/client-ws"
 
 # 配置数据库
 # database:

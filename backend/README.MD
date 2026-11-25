@@ -82,7 +82,26 @@ docker run -d --name costume-tryon -p 8000:8000 \
 
 ## 配置 API Key
 
-**切勿把真实 Key 提交到仓库。** Key 通过环境变量注入，优先级高于配置文件：
+**切勿把真实 Key 提交到仓库。** 后端配置统一支持两种入口：
+
+1. `backend/.env`（或操作系统、Docker 注入的环境变量）；
+2. `backend/manifest/config/config.yaml`。
+
+优先级为：操作系统/容器环境变量 > `.env` > `config.yaml` > `config.example.yaml`/代码默认值。进程启动时会自动加载 `.env`，真实 `.env` 与 `config.yaml` 均已被 Git 忽略。
+
+常用模型 Key 继续使用 `OPENAI_API_KEY`、`ARK_API_KEY`、`GEMINI_API_KEY`、`SEEDUPLEX_API_KEY`。此外，`config.yaml` 中任意已存在的叶子配置都可使用 `NVZHUANG_` 环境变量覆盖，例如：
+
+```dotenv
+NVZHUANG_SERVER_ADDRESS=:8000
+NVZHUANG_LLM_MODELS_GPT_IMAGE_BASE_URL=https://api.openai.com/v1
+NVZHUANG_LLM_MODELS_GPT_IMAGE_MODEL=gpt-image-2
+NVZHUANG_SECURITY_AUTH_REQUIRED=true
+NVZHUANG_UPLOAD_MAX_REQUEST_BODY_BYTES=25165824
+```
+
+命名规则为“配置路径转大写下划线”，连字符和驼峰同样转换：`llm.models.gpt-image.baseURL` → `NVZHUANG_LLM_MODELS_GPT_IMAGE_BASE_URL`。数组既可使用英文逗号分隔，也可填写 JSON 数组。
+
+PowerShell 直接注入环境变量的示例：
 
 ```bash
 # Windows PowerShell
@@ -96,7 +115,7 @@ go run main.go
 
 ```bash
 cp manifest/config/config.example.yaml manifest/config/config.yaml
-# 编辑 config.yaml，填入 llm.openai.apiKey / llm.gemini.apiKey
+# 编辑 config.yaml，填入 llm.models.<模型别名>.apiKey / baseURL / model
 ```
 
 ## 接口说明

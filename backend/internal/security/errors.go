@@ -28,9 +28,11 @@ var (
 
 	ErrOriginNotAllowed = NewAPIError(403, 40301, "ORIGIN_NOT_ALLOWED", "当前页面来源不允许访问后端")
 
-	ErrRateLimited        = NewAPIError(429, 42901, "RATE_LIMITED", "请求过于频繁，请稍后重试")
-	ErrDailyQuotaExceeded = NewAPIError(429, 42902, "DAILY_QUOTA_EXCEEDED", "今日生成额度已用完")
-	ErrConcurrencyLimited = NewAPIError(429, 42903, "CONCURRENCY_LIMITED", "当前生成任务较多，请稍后重试")
+	ErrRateLimited                 = NewAPIError(429, 42901, "RATE_LIMITED", "请求过于频繁，请稍后重试")
+	ErrDailyQuotaExceeded          = NewAPIError(429, 42902, "DAILY_QUOTA_EXCEEDED", "今日生成额度已用完")
+	ErrConcurrencyLimited          = NewAPIError(429, 42903, "CONCURRENCY_LIMITED", "当前生成任务较多，请稍后重试")
+	ErrCloudBudgetExceeded         = NewAPIError(429, 42904, "CLOUD_BUDGET_EXCEEDED", "今日云端生成预算已用完，请改用本地模型或明日重试")
+	ErrCostAcknowledgementRequired = NewAPIError(402, 40201, "COST_ACKNOWLEDGEMENT_REQUIRED", "云端生成可能消耗模型额度，请确认本次调用后重试")
 
 	ErrRequestTooLarge         = NewAPIError(413, 41301, "REQUEST_TOO_LARGE", "上传内容过大，请压缩图片后重试")
 	ErrInvalidImageBase64      = NewAPIError(422, 42201, "INVALID_IMAGE_BASE64", "图片数据损坏，请重新选择图片")

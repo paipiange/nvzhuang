@@ -81,14 +81,16 @@ func (g *Gemini) Generate(ctx context.Context, personB64, garmentB64, prompt, si
 		return "", fmt.Errorf("Gemini API key not configured")
 	}
 
+	personMIME, person := providerReferenceParts(personB64)
+	garmentMIME, garment := providerReferenceParts(garmentB64)
 	reqBody := geminiRequest{
 		Contents: []geminiContent{
 			{
 				Role: "user",
 				Parts: []geminiPart{
 					{Text: prompt},
-					{InlineData: &geminiInlineData{MimeType: "image/png", Data: ensureBase64(personB64)}},
-					{InlineData: &geminiInlineData{MimeType: "image/png", Data: ensureBase64(garmentB64)}},
+					{InlineData: &geminiInlineData{MimeType: personMIME, Data: person}},
+					{InlineData: &geminiInlineData{MimeType: garmentMIME, Data: garment}},
 				},
 			},
 		},

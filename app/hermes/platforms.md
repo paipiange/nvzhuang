@@ -42,6 +42,8 @@ import { h5Api } from '@/utils/h5'
 | 打包分析 visualizer | vite.config.ts | 仅 H5 production,产物在 `node_modules/.cache/visualizer/stats.html` |
 | 自动打开开发者工具 | scripts/open-dev-tools.js | mp-weixin / mp-alipay / mp-lark 构建后自动打开对应工具;上传脚本用 `SKIP_OPEN_DEVTOOLS=true` 跳过 |
 | bundle-optimizer 分包优化 | vite.config.ts | `enable: isMpWeixin`,仅微信小程序端 |
+| 语音录制 / 播放 | `src/pages/mine/voice.vue` | H5 使用 Web Audio 转 16 kHz PCM、Blob URL 播放，并显示 RMS/峰值与拦截近数字静音；APP-PLUS 使用原生录音器与临时文件兜底，不伪报实时音量；本地 `segment:true` WAV 按 FIFO 播放、每轮累计最多 32 MiB，生成与播放均完成后才空闲；后台/卸载时清理采集与全部播放队列；`session.reset` 等服务端同名确认后清空当前连接记忆 |
+| 全双工通话 / 角色写真 | `src/composables/voice/`、`src/composables/character/`、`src/pages/mine/voice.vue`、`../android/` | H5 SeedDuplex 通过 AudioWorklet 持续发送 16kHz/20ms PCM 帧，Web Audio 按序播放24kHz PCM；仓库内 Android WebView 壳通过受限 WebMessage 桥接 AudioRecord/AudioTrack，绑定本地页面来源、麦克风权限与 Activity 生命周期。其它未接入持续 PCM 的 APP 壳明确提供按轮模式。连接与回合代次隔离迟到音频，插话即时清空播放，网络持续拥塞3秒断开；角色只接受清单ID，角色切换终止旧语音会话；高清写真独立可取消且失败不影响通话。 |
 | 原生插件资源复制 | vite.config.ts | 仅 app 平台且 `VITE_COPY_NATIVE_RES_ENABLE=true` |
 
 ## 4. 多端请求地址

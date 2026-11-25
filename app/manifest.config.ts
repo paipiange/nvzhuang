@@ -3,6 +3,7 @@ import process from 'node:process'
 // manifest.config.ts
 import { defineManifestConfig } from '@uni-helper/vite-plugin-uni-manifest'
 import { loadEnv } from 'vite'
+import { resolveAppTitle } from './src/config/appMetadata'
 
 // 手动解析命令行参数获取 mode
 function getMode() {
@@ -23,7 +24,7 @@ const {
 // console.log('manifest.config.ts env:', env)
 
 export default defineManifestConfig({
-  'name': VITE_APP_TITLE,
+  'name': resolveAppTitle(VITE_APP_TITLE),
   'appid': VITE_UNI_APPID,
   'description': '',
   'versionName': '1.0.0',
@@ -66,6 +67,8 @@ export default defineManifestConfig({
           '<uses-permission android:name="android.permission.READ_LOGS"/>',
           '<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>',
           '<uses-feature android:name="android.hardware.camera.autofocus"/>',
+          '<uses-permission android:name="android.permission.RECORD_AUDIO"/>',
+          '<uses-permission android:name="android.permission.INTERNET"/>',
           '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>',
           '<uses-permission android:name="android.permission.CAMERA"/>',
           '<uses-permission android:name="android.permission.GET_ACCOUNTS"/>',

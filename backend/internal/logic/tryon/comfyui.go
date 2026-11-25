@@ -478,6 +478,9 @@ func setComfySeed(workflow map[string]interface{}, nodeID string, seed int64) er
 }
 
 func (c *ComfyUI) buildPrompt(prompt string) string {
+	if strings.HasPrefix(prompt, portraitPromptPrefix) {
+		return prompt
+	}
 	if strings.Contains(strings.ToLower(c.model), "qwen") || strings.Contains(strings.ToLower(c.workflowPath), "qwen") {
 		return buildQwenTryonPrompt(prompt)
 	}

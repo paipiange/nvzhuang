@@ -11,6 +11,7 @@ import (
 	"backend/internal/logic/jobs"
 	"backend/internal/logic/tryon"
 	"backend/internal/middleware"
+	"backend/internal/security"
 )
 
 type Controller struct{}
@@ -199,6 +200,7 @@ type CreateJobPayload struct {
 	KeepFace         bool                 `json:"keep_face"`
 	ClientRequestID  string               `json:"client_request_id"`
 	ClientConfig     *ClientConfigPayload `json:"client_config"`
+	CostAcknowledged bool                 `json:"cost_acknowledged"`
 }
 
 func (c *Controller) CreateTryonJob(r *ghttp.Request) {
@@ -234,6 +236,27 @@ func (c *Controller) CreateTryonJob(r *ghttp.Request) {
 			APIKey:   payload.ClientConfig.APIKey,
 			BaseURL:  payload.ClientConfig.BaseURL,
 			Model:    payload.ClientConfig.Model,
+		}
+	}
+	cloudGeneration, costErr := tryon.IsCloudGeneration(ctx, payload.ModelKey, clientConfig)
+	if costErr != nil {
+		r.Response.WriteHeader(400)
+		r.Response.WriteJson(g.Map{"code": 400, "message": "模型配置无效", "request_id": middleware.GetRequestID(r)})
+		return
+	}
+	if cloudGeneration {
+		secService := security.GetService()
+		if secService.Config.CostGuard.RequireAcknowledgement && !payload.CostAcknowledged {
+			middleware.WriteAPIError(r, security.ErrCostAcknowledgementRequired)
+			return
+		}
+		principalID := r.GetCtxVar(middleware.CtxPrincipalID).String()
+		if principalID == "" {
+			principalID = "ip:" + r.GetClientIp()
+		}
+		if !secService.CloudBudgetTracker.CheckAndDeduct(principalID) {
+			middleware.WriteAPIError(r, security.ErrCloudBudgetExceeded)
+			return
 		}
 	}
 

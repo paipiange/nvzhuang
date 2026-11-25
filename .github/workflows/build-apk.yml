@@ -1,106 +1,186 @@
-name: Build Android APK
+name: Publish Android APK
 
 on:
   workflow_dispatch:
   push:
     tags:
       - 'v*'
-    branches:
-      - main
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  build-apk:
-    name: Build Offline Android APK
+  build-release:
+    name: Validate and build signed APK
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Setup Node.js & pnpm
-        uses: pnpm/action-setup@v3
+      - name: Reject committed credentials and private paths
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git grep -nE '(sk-[A-Za-z0-9]{20,}|AIza[A-Za-z0-9]{20,})' -- . ':!*.lock'; then
+            echo 'Detected a credential-like value in the repository.' >&2
+            exit 1
+          fi
+
+          if git grep -nE '[A-Za-z]:\\\\(Users|Documents and Settings)\\\\' -- .; then
+            echo 'Detected a private absolute Windows path in the repository.' >&2
+            exit 1
+          fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
-          version: 10
-      - uses: actions/setup-node@v4
+          version: 10.10.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 20
-          cache: 'pnpm'
-          cache-dependency-path: 'app/pnpm-lock.yaml'
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
 
-      - name: Build Web Application Bundle
-        working-directory: ./app
+      - name: Install frontend dependencies
+        working-directory: app
+        run: pnpm install --frozen-lockfile --registry=https://registry.npmjs.org
+
+      - name: Prepare public environment template
+        working-directory: app
         run: |
           if [ ! -f env/.env ]; then
             cp env/.env.example env/.env
           fi
-          pnpm config set registry https://registry.npmjs.org
-          pnpm install --registry=https://registry.npmjs.org
-          pnpm build:h5
 
-      - name: Bundle Web Assets into Android App
+      - name: Validate frontend
+        working-directory: app
+        run: |
+          pnpm build:h5
+          pnpm type-check
+          pnpm lint:ci
+          pnpm test:run
+
+      - name: Validate browser flows
+        working-directory: app
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:e2e
+
+      - name: Bundle H5 assets into Android
         run: |
           mkdir -p android/app/src/main/assets/www
-          cp -r app/dist/build/h5/* android/app/src/main/assets/www/
+          cp -R app/dist/build/h5/. android/app/src/main/assets/www/
 
-      - name: Setup Java (JDK 17)
-        uses: actions/setup-java@v4
+      - name: Set up Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
 
-      - name: Accept Android SDK Licenses
-        run: |
-          yes | sdkmanager --licenses || true
+      - name: Prepare backend config template
+        working-directory: backend
+        run: cp manifest/config/config.example.yaml manifest/config/config.yaml
 
-      - name: Prepare Signing Keystore
-        working-directory: ./android/app
+      - name: Validate backend
+        working-directory: backend
         run: |
-          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
-          elif [ ! -f release.jks ]; then
-            keytool -genkeypair -v -keystore release.jks -alias paipiange -keyalg RSA -keysize 2048 -validity 10000 -storepass "nvzhuang123456" -keypass "nvzhuang123456" -dname "CN=paipiange, OU=nvzhuang, O=paipiange, L=Beijing, ST=Beijing, C=CN"
+          go mod verify
+          go test ./...
+          go vet ./...
+
+      - name: Set up Java
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
+
+      - name: Require release signing secrets
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          SIGNING_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$SIGNING_KEYSTORE_BASE64" ] || missing+=(KEYSTORE_BASE64)
+          [ -n "$SIGNING_KEYSTORE_PASSWORD" ] || missing+=(KEYSTORE_PASSWORD)
+          [ -n "$SIGNING_KEY_ALIAS" ] || missing+=(KEY_ALIAS)
+          [ -n "$SIGNING_KEY_PASSWORD" ] || missing+=(KEY_PASSWORD)
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            printf 'Missing required GitHub Actions secrets: %s\n' "${missing[*]}" >&2
+            exit 1
           fi
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+          chmod 600 android/app/release.jks
 
-      - name: Build Release APK
-        working-directory: ./android
+      - name: Test Android and build signed release APK
+        working-directory: android
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || 'nvzhuang123456' }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'paipiange' }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'nvzhuang123456' }}
-        run: |
-          gradle assembleRelease --no-daemon --stacktrace
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew testDebugUnitTest lintRelease assembleRelease --no-daemon --stacktrace
 
-      - name: Rename APK for Distribution
+      - name: Package APK and checksum
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p build_output
           cp android/app/build/outputs/apk/release/*.apk build_output/nvzhuang-release.apk
+          sha256sum build_output/nvzhuang-release.apk > build_output/nvzhuang-release.apk.sha256
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Remove signing keystore
+        if: always()
+        run: rm -f android/app/release.jks
+
+      - name: Upload signed APK artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: nvzhuang-release.apk
-          path: build_output/nvzhuang-release.apk
+          name: nvzhuang-release-apk
+          path: |
+            build_output/nvzhuang-release.apk
+            build_output/nvzhuang-release.apk.sha256
+          if-no-files-found: error
+          retention-days: 14
 
-      - name: Publish to GitHub Releases
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+  publish-release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download signed APK artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          files: build_output/nvzhuang-release.apk
-          name: Release ${{ github.ref_name }}
-          body: |
-            ## 📱 Android 离线安装包下载
+          name: nvzhuang-release-apk
+          path: build_output
 
-            - **GitHub 直接下载**：点击下方 Assets 中的 `nvzhuang-release.apk`
-            - **夸克网盘下载（国内备用）**：「拍片哥女装」链接：https://pan.quark.cn/s/a914f76fac0b
-
-            > 💡 **使用提示**：本安装包已内置全部前端页面与离线示例图集。如需使用真实 AI 换装功能，请在 App 内前往「我的 → 服务与模型设置」填写你的后端 API 地址；如仅体验图库浏览，可在设置中开启「离线演示模式」。
-          draft: false
-          prerelease: false
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" build_output/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" build_output/* \
+              --title "Release $GITHUB_REF_NAME" \
+              --generate-notes
+          fi

@@ -11,7 +11,10 @@ export default function request<T extends { data?: any }>(
     headers?: Record<string, unknown>
   },
 ) {
-  const requestOptions = {
+  const requestOptions: CustomRequestOptions & {
+    params?: Record<string, unknown>
+    headers?: Record<string, unknown>
+  } = {
     url,
     ...options,
   }

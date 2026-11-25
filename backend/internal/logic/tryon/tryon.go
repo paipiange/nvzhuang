@@ -74,6 +74,14 @@ func DoTryonWithClientConfig(ctx context.Context, personB64, garmentB64, model, 
 
 // DoTryonWithValidatedImages 使用已完成安全校验的图片结构执行换装
 func DoTryonWithValidatedImages(ctx context.Context, personImg, garmentImg *imagevalidate.ValidatedImage, model, size, lang string, clientConfig *ModelConfig) (resultB64, usedModel, usedPrompt string, err error) {
+	return DoTryonWithValidatedPose(ctx, personImg, garmentImg, model, size, lang, "", clientConfig)
+}
+
+// DoTryonWithValidatedPose accepts only a server-owned pose ID, never an injected prompt or path.
+func DoTryonWithValidatedPose(ctx context.Context, personImg, garmentImg *imagevalidate.ValidatedImage, model, size, lang, poseID string, clientConfig *ModelConfig) (resultB64, usedModel, usedPrompt string, err error) {
+	if poseID != "" && !ValidPoseID(poseID) {
+		return "", "", "", gerror.New("写真姿势无效")
+	}
 	if personImg == nil || len(personImg.Data) == 0 {
 		return "", "", "", gerror.New("人像照片不能为空")
 	}
@@ -81,8 +89,8 @@ func DoTryonWithValidatedImages(ctx context.Context, personImg, garmentImg *imag
 		return "", "", "", gerror.New("服装图不能为空")
 	}
 
-	personB64 := base64.StdEncoding.EncodeToString(personImg.Data)
-	garmentB64 := base64.StdEncoding.EncodeToString(garmentImg.Data)
+	personB64 := "data:" + personImg.MIME + ";base64," + base64.StdEncoding.EncodeToString(personImg.Data)
+	garmentB64 := "data:" + garmentImg.MIME + ";base64," + base64.StdEncoding.EncodeToString(garmentImg.Data)
 
 	if model == "" {
 		model = "gemini"
@@ -106,6 +114,10 @@ func DoTryonWithValidatedImages(ctx context.Context, personImg, garmentImg *imag
 		promptStr = BuildGemini(lang)
 	} else {
 		promptStr = BuildDefault(lang)
+	}
+
+	if poseID != "" {
+		promptStr = buildPortraitPrompt(poseID)
 	}
 
 	result, err := gen.Generate(ctx, personB64, garmentB64, promptStr, size)

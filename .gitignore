@@ -28,10 +28,19 @@ node_modules/
 **/node_modules/
 dist/
 **/dist/
+app/playwright-report/
+app/test-results/
+
+# Python runtime caches
+__pycache__/
+*.py[cod]
 
 # 临时测试生成输出
 output/
 *.zip
+backend/temp-voice-*.yaml
+.dsh-permission-recovery/
+dsh-session-rollover/
 
 # 打包产物
 dist-apk/
@@ -42,5 +51,7 @@ build_output/
 *.jks
 android/.gradle/
 android/app/build/
+android/app/src/main/assets/www/*
+!android/app/src/main/assets/www/.gitkeep
 android/build/
 

@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import { useSettingsStore } from '@/store/settings'
 import { useTryonStore } from '@/store/tryon'
 import { getEnvBaseUrl } from '@/utils'
+import { normalizeModelBaseUrl, normalizeServiceBaseUrl } from '@/utils/serviceEndpoint'
+import { evaluateVoiceBackendPreflight } from '@/composables/voice/voiceBackendPreflight'
+import { evaluateImageProviderPreflight } from '@/composables/companion/imageProviderPreflight'
 
 definePage({
   style: {
@@ -21,9 +24,17 @@ const provider = ref(settingsStore.clientConfig.provider || 'gemini')
 const apiKey = ref(settingsStore.clientConfig.apiKey || '')
 const baseUrl = ref(settingsStore.clientConfig.baseUrl || '')
 const model = ref(settingsStore.clientConfig.model || '')
+const seedVoiceApiKey = ref(settingsStore.seedVoiceApiKey || '')
 
 const showKey = ref(false)
+const showSeedVoiceKey = ref(false)
 const testLoading = ref(false)
+const voiceCheckLoading = ref(false)
+const voiceCheckMessage = ref('')
+const voiceCheckOk = ref(false)
+const imageCheckLoading = ref(false)
+const imageCheckMessage = ref('')
+const imageCheckOk = ref(false)
 
 const providerOptions = [
   { label: 'Google Gemini', value: 'gemini' },
@@ -39,15 +50,12 @@ function handleBack() {
   })
 }
 
-function normalizeServerUrl(raw: string): string {
-  return raw
-    .trim()
-    .replace(/\/+$/, '')
-    .replace(/^https?:\/\//i, match => match.toLowerCase())
+function handleGoVoice() {
+  uni.navigateTo({ url: '/pages/mine/voice?provider=seeduplex' })
 }
 
-function isValidHttpUrl(url: string): boolean {
-  return /^https?:\/\/\S+$/i.test(url)
+function normalizeServerUrl(raw: string): string {
+  return normalizeServiceBaseUrl(raw)
 }
 
 function isValidBackendOptionsResponse(raw: unknown): boolean {
@@ -66,23 +74,38 @@ function isValidBackendOptionsResponse(raw: unknown): boolean {
     && (payload as { code?: unknown }).code === 0
 }
 
-function handleSave() {
-  const cleanUrl = normalizeServerUrl(serverUrl.value)
-  if (cleanUrl && !isValidHttpUrl(cleanUrl)) {
-    uni.showToast({
-      title: '服务地址需以 http:// 或 https:// 开头',
-      icon: 'none',
-    })
-    return
+function handleSave(): boolean {
+  let cleanUrl = ''
+  try {
+    cleanUrl = normalizeServerUrl(serverUrl.value)
+  }
+  catch (cause) {
+    uni.showToast({ title: cause instanceof Error ? cause.message : '服务地址无效', icon: 'none' })
+    return false
+  }
+  const seedKey = seedVoiceApiKey.value.trim()
+  if (seedKey && (seedKey.length > 2048 || !/^[\x21-\x7E]+$/.test(seedKey))) {
+    uni.showToast({ title: '豆包语音 Key 格式无效', icon: 'none' })
+    return false
+  }
+  let cleanModelBaseUrl = baseUrl.value.trim()
+  try {
+    if (cleanModelBaseUrl)
+      cleanModelBaseUrl = normalizeModelBaseUrl(cleanModelBaseUrl)
+  }
+  catch (cause) {
+    uni.showToast({ title: cause instanceof Error ? cause.message : '模型端点无效', icon: 'none' })
+    return false
   }
   serverUrl.value = cleanUrl
   settingsStore.serverBaseUrl = cleanUrl
+  settingsStore.seedVoiceApiKey = seedKey
   settingsStore.useMock = useMock.value
   settingsStore.expertMode = expertMode.value
   settingsStore.clientConfig = {
     provider: provider.value as any,
     apiKey: apiKey.value.trim(),
-    baseUrl: baseUrl.value.trim(),
+    baseUrl: cleanModelBaseUrl,
     model: model.value.trim(),
   }
   settingsStore.saveSettings()
@@ -90,26 +113,27 @@ function handleSave() {
     title: '设置已保存',
     icon: 'success',
   })
+  return true
 }
 
 async function handleTestConnection() {
   if (testLoading.value) {
-    return
+    return false
   }
-  const target = normalizeServerUrl(serverUrl.value)
-  if (!target) {
+  if (!serverUrl.value.trim()) {
     uni.showToast({
       title: '请先输入服务地址',
       icon: 'none',
     })
-    return
+    return false
   }
-  if (!isValidHttpUrl(target)) {
-    uni.showToast({
-      title: '服务地址需以 http:// 或 https:// 开头',
-      icon: 'none',
-    })
-    return
+  let target = ''
+  try {
+    target = normalizeServerUrl(serverUrl.value)
+  }
+  catch (cause) {
+    uni.showToast({ title: cause instanceof Error ? cause.message : '服务地址无效', icon: 'none' })
+    return false
   }
 
   serverUrl.value = target
@@ -152,6 +176,75 @@ async function handleTestConnection() {
   }
 }
 
+async function handleVoicePreflight() {
+  if (voiceCheckLoading.value)
+    return
+  let target = ''
+  try {
+    target = normalizeServerUrl(serverUrl.value)
+  }
+  catch (cause) {
+    voiceCheckOk.value = false
+    voiceCheckMessage.value = cause instanceof Error ? cause.message : '服务地址无效'
+    return
+  }
+  voiceCheckLoading.value = true
+  voiceCheckMessage.value = ''
+  try {
+    const [status, tasks] = await Promise.all([
+      uni.request({ url: `${target}/api/v1/voice/status`, method: 'GET', timeout: 10000 }),
+      uni.request({ url: `${target}/api/v1/voice/tasks`, method: 'GET', timeout: 10000 }),
+    ])
+    const result = status.statusCode >= 200 && status.statusCode < 300 && tasks.statusCode >= 200 && tasks.statusCode < 300
+      ? evaluateVoiceBackendPreflight(status.data, tasks.data, !!seedVoiceApiKey.value.trim())
+      : { ok: false, message: '语音接口连接失败，请检查后端状态。' }
+    voiceCheckOk.value = result.ok
+    voiceCheckMessage.value = result.message
+  }
+  catch {
+    voiceCheckOk.value = false
+    voiceCheckMessage.value = '语音后端自检失败，请检查网络和服务地址。'
+  }
+  finally {
+    voiceCheckLoading.value = false
+  }
+}
+
+async function handleImagePreflight() {
+  if (imageCheckLoading.value)
+    return
+  let target = ''
+  try {
+    target = normalizeServerUrl(serverUrl.value)
+  }
+  catch (cause) {
+    imageCheckOk.value = false
+    imageCheckMessage.value = cause instanceof Error ? cause.message : '服务地址无效'
+    return
+  }
+  imageCheckLoading.value = true
+  imageCheckMessage.value = ''
+  try {
+    const response = await uni.request({
+      url: `${target}/api/v1/tryon/providers/health`,
+      method: 'GET',
+      timeout: 70000,
+    })
+    const result = response.statusCode >= 200 && response.statusCode < 300
+      ? evaluateImageProviderPreflight(response.data)
+      : { ok: false, message: '图片模型自检接口连接失败，请检查后端状态。' }
+    imageCheckOk.value = result.ok
+    imageCheckMessage.value = result.message
+  }
+  catch {
+    imageCheckOk.value = false
+    imageCheckMessage.value = '图片模型自检失败，请检查网络和后端配置。'
+  }
+  finally {
+    imageCheckLoading.value = false
+  }
+}
+
 function handleClearCache() {
   uni.showModal({
     title: '清理缓存',
@@ -183,6 +276,7 @@ function handleResetDefaults() {
         apiKey.value = settingsStore.clientConfig.apiKey
         baseUrl.value = settingsStore.clientConfig.baseUrl
         model.value = settingsStore.clientConfig.model
+        seedVoiceApiKey.value = settingsStore.seedVoiceApiKey
         uni.showToast({
           title: '已恢复默认',
           icon: 'success',
@@ -194,7 +288,7 @@ function handleResetDefaults() {
 </script>
 
 <template>
-  <view class="settings-page">
+  <view data-testid="settings-page" class="settings-page">
     <view class="status-bar-placeholder pt-safe" />
 
     <!-- 自定义导航栏 -->
@@ -229,7 +323,7 @@ function handleResetDefaults() {
               v-model="serverUrl"
               class="text-input"
               type="text"
-              placeholder="例如 https://api.yourdomain.com 或 http://192.168.1.100:8000"
+              placeholder="例如 https://api.yourdomain.com 或 http://127.0.0.1:8000"
             >
           </view>
 
@@ -246,7 +340,55 @@ function handleResetDefaults() {
             <view class="btn-test" :class="{ disabled: testLoading }" @tap="handleTestConnection">
               {{ testLoading ? '测试中...' : '测试连接' }}
             </view>
+            <view data-testid="image-provider-preflight" class="btn-test" :class="{ disabled: imageCheckLoading }" @tap="handleImagePreflight">
+              {{ imageCheckLoading ? '检查中...' : '检查图片模型' }}
+            </view>
           </view>
+          <text v-if="imageCheckMessage" class="section-desc" :class="imageCheckOk ? 'text-green-700' : 'text-red-700'">
+            {{ imageCheckMessage }}
+          </text>
+        </view>
+
+        <!-- 设备语音配置 -->
+        <view class="card-section">
+          <view class="section-header">
+            <view class="i-carbon-microphone text-18px text-#cd7188" />
+            <text class="section-title">AI 陪伴通话</text>
+          </view>
+          <text class="section-desc">
+            通话共用上方 GoFrame 后端地址。豆包语音 Key 仅保存在当前运行内存，不写入本地存储；关闭或刷新 App 后需重新输入。Key 只在开始 SeedDuplex 会话时发送给您配置的后端。
+          </text>
+
+          <view class="input-group">
+            <view class="flex items-center justify-between">
+              <text class="input-label">本次运行语音 Key（可选）</text>
+              <text class="text-11px text-#9e8e95">留空则使用后端环境变量</text>
+            </view>
+            <view class="input-with-eye">
+              <input
+                v-model="seedVoiceApiKey"
+                class="text-input"
+                :password="!showSeedVoiceKey"
+                autocomplete="off"
+                placeholder="输入已授权的豆包 SeedDuplex Key"
+              >
+              <view class="eye-btn" @tap="showSeedVoiceKey = !showSeedVoiceKey">
+                <view :class="showSeedVoiceKey ? 'i-carbon-view-off' : 'i-carbon-view'" class="text-16px text-#888" />
+              </view>
+            </view>
+          </view>
+
+          <view class="action-row">
+            <view class="btn-test" @tap="handleGoVoice">
+              进入 AI 陪伴通话
+            </view>
+            <view data-testid="voice-provider-preflight" class="btn-test" :class="{ disabled: voiceCheckLoading }" @tap="handleVoicePreflight">
+              {{ voiceCheckLoading ? '自检中...' : '检查语音配置' }}
+            </view>
+          </view>
+          <text v-if="voiceCheckMessage" class="section-desc" :class="voiceCheckOk ? 'text-green-700' : 'text-red-700'">
+            {{ voiceCheckMessage }}
+          </text>
         </view>
 
         <!-- 演示与调试选项 -->
